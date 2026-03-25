@@ -225,11 +225,11 @@ const STATUS_CONFIG = {
 async function init() {
   showLoader();
   try {
-    const data = await loadTracker();
+    const data = await loadAllData();
     if (!data.success) { hideLoader(); return; }
 
     hideLoader();
-    const job = data.job;
+    const job = data.tracker;
     const config = STATUS_CONFIG[job.status] || STATUS_CONFIG['none'];
 
     document.getElementById('status-icon').textContent = config.icon;
