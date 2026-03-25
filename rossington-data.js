@@ -5,7 +5,7 @@
 // ============================================================
 
 // ⚙️ PASTE YOUR WEB APP URL HERE after deploying the Apps Script
-const API_URL = "https://script.google.com/macros/s/AKfycbxwK3QyxpbM-_ldr0dMxFehs9R0v-XUUAR7J3jzU0WqfHTP6buzfv48_oWtTfBDv1G5/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
 
 // ⚙️ SET THE CUSTOMER ID — in production this comes from login/URL param
 // For testing, hardcode a customer_id that exists in your Google Sheet
