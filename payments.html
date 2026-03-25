@@ -178,14 +178,21 @@ body {
 <script>
 async function init() {
   try {
+    // Load customer data first to get accurate balance
+    const customerData = await loadCustomerData();
     const data = await loadPayments();
     if (!data.success) return;
 
-    const balance = parseFloat(data.outstanding_balance) || 0;
+    const balance = customerData.success 
+      ? parseFloat(customerData.customer.outstanding_balance) || 0
+      : parseFloat(data.outstanding_balance) || 0;
 
     // Outstanding balance
     if (balance > 0) {
       document.getElementById('outstanding-title').textContent = '£' + balance.toFixed(2) + ' due';
+      if (customerData.success) {
+        document.getElementById('outstanding-sub').textContent = 'Last clean: ' + formatDate(customerData.customer.last_clean);
+      }
       document.getElementById('outstanding-badge').textContent = 'Overdue';
       document.getElementById('outstanding-badge').className = 'badge badge-red';
       document.getElementById('outstanding-btn').innerHTML =
