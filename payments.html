@@ -217,11 +217,7 @@ body {
 async function init() {
   showLoader();
   try {
-    // Load customer data first to get accurate balance
-    const customerData = await loadCustomerData();
-    console.log('Customer data:', JSON.stringify(customerData));
-    const data = await loadPayments();
-    console.log('Payment data:', JSON.stringify(data));
+    const data = await loadAllData();
     if (!data.success) {
       hideLoader();
       document.getElementById('outstanding-title').textContent = 'Error loading data';
@@ -229,15 +225,13 @@ async function init() {
     }
 
     hideLoader();
-    const balance = customerData.success 
-      ? parseFloat(customerData.customer.outstanding_balance) || 0
-      : parseFloat(data.outstanding_balance) || 0;
+    const balance = parseFloat(data.outstanding_balance) || 0;
 
     // Outstanding balance
     if (balance > 0) {
       document.getElementById('outstanding-title').textContent = '£' + balance.toFixed(2) + ' due';
       if (customerData.success) {
-        document.getElementById('outstanding-sub').textContent = 'Last clean: ' + formatDate(customerData.customer.last_clean);
+        document.getElementById('outstanding-sub').textContent = 'Last clean: ' + formatDate(data.customer ? data.customer.last_clean : null);
       }
       document.getElementById('outstanding-badge').textContent = 'Overdue';
       document.getElementById('outstanding-badge').className = 'badge badge-red';

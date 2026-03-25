@@ -393,7 +393,7 @@ const GOOGLE_REVIEW_URL = 'https://g.page/r/YOUR_GOOGLE_REVIEW_LINK_HERE';
 async function init() {
   showLoader();
   try {
-    const data = await loadCustomerData();
+    const data = await loadAllData();
     if (!data.success) {
       hideLoader();
       document.getElementById('greeting').textContent = 'Welcome 👋';

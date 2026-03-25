@@ -244,12 +244,12 @@ body {
 async function init() {
   showLoader();
   try {
-    const data = await loadReferrals();
+    const data = await loadAllData();
     if (!data.success) { hideLoader(); return; }
 
     hideLoader();
-    const count = data.referral_count;
-    const referralLink = 'rossingtoncleaning.co.uk/ref/' + CUSTOMER_ID;
+    const count = data.referrals ? data.referrals.referral_count : 0;
+    const referralLink = 'rossingtonwindowcleaning.github.io/rwc-app/index.html?ref=' + CUSTOMER_ID;
 
     // Update referral link
     document.getElementById('refLink').textContent = referralLink;
