@@ -6,6 +6,7 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
 const CACHE_KEY = "rwc_customer_data";
+
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Read customer ID from URL
