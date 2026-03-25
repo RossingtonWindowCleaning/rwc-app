@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rossington Window Cleaning — Payments</title>
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f4f8;
+  min-height: 100vh;
+}
+
+.header {
+  background: #0C447C;
+  padding: 20px 16px 24px;
+}
+
+.header h1 { color: #B5D4F4; font-size: 12px; }
+.header h2 { color: white; font-size: 20px; margin-top: 4px; }
+
+.content {
+  padding: 16px;
+  padding-bottom: 90px;
+  margin-top: -12px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid #eee;
+}
+
+.card-label {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.card-title { font-size: 16px; font-weight: 600; }
+.card-sub { font-size: 13px; color: #666; margin-top: 4px; }
+
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 8px;
+}
+
+.badge-green { background: #EAF3DE; color: #27500A; }
+.badge-red { background: #FCEBEB; color: #A32D2D; }
+
+.payment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 13px;
+}
+
+.payment-row:last-child { border-bottom: none; }
+
+.payment-method {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.btn-overdue { background: #A32D2D; color: white; }
+
+.overdue-text {
+  font-size: 11px;
+  color: #A32D2D;
+  text-align: center;
+  margin-top: 6px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+.nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: white;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0 20px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10px;
+  color: #999;
+  text-decoration: none;
+}
+
+.nav-item.active { color: #0C447C; }
+.nav-icon { font-size: 20px; }
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h1>Rossington Window Cleaning</h1>
+  <h2>Payments</h2>
+</div>
+
+<div class="content">
+
+  <div class="card" id="outstanding-card">
+    <div class="card-label">Outstanding payment</div>
+    <div class="card-title" id="outstanding-title">Loading...</div>
+    <div class="card-sub" id="outstanding-sub"></div>
+    <span class="badge" id="outstanding-badge"></span>
+    <div id="outstanding-btn"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Payment history</div>
+    <div id="payment-history">
+      <div class="empty-state">Loading payment history...</div>
+    </div>
+  </div>
+
+</div>
+
+<nav class="nav">
+  <a href="home.html" class="nav-item">
+    <span class="nav-icon">🏠</span>
+    <span>Home</span>
+  </a>
+  <a href="payments.html" class="nav-item active">
+    <span class="nav-icon">💳</span>
+    <span>Payments</span>
+  </a>
+  <a href="tracker.html" class="nav-item">
+    <span class="nav-icon">📍</span>
+    <span>Tracker</span>
+  </a>
+  <a href="referral.html" class="nav-item">
+    <span class="nav-icon">⭐</span>
+    <span>Refer</span>
+  </a>
+  <a href="terms.html" class="nav-item">
+    <span class="nav-icon">📄</span>
+    <span>T&Cs</span>
+  </a>
+</nav>
+
+<script src="rossington-data.js"></script>
+<script>
+async function init() {
+  try {
+    const data = await loadPayments();
+    if (!data.success) return;
+
+    const balance = parseFloat(data.outstanding_balance) || 0;
+
+    // Outstanding balance
+    if (balance > 0) {
+      document.getElementById('outstanding-title').textContent = '£' + balance.toFixed(2) + ' due';
+      document.getElementById('outstanding-badge').textContent = 'Overdue';
+      document.getElementById('outstanding-badge').className = 'badge badge-red';
+      document.getElementById('outstanding-btn').innerHTML =
+        '<button class="btn btn-overdue">Pay now — £' + balance.toFixed(2) + '</button>' +
+        '<div class="overdue-text">Payment overdue — please pay to avoid service suspension</div>';
+    } else {
+      document.getElementById('outstanding-title').textContent = 'Nothing outstanding ✅';
+      document.getElementById('outstanding-sub').textContent = 'You\'re all up to date';
+      document.getElementById('outstanding-badge').textContent = 'Paid up';
+      document.getElementById('outstanding-badge').className = 'badge badge-green';
+    }
+
+    // Payment history
+    const historyEl = document.getElementById('payment-history');
+    if (!data.payments || data.payments.length === 0) {
+      historyEl.innerHTML = '<div class="empty-state">No payment history yet</div>';
+      return;
+    }
+
+    historyEl.innerHTML = data.payments.map(p => `
+      <div class="payment-row">
+        <div>
+          <div>${formatDate(p.date)}</div>
+          <div class="payment-method">${p.method || 'Payment'}${p.notes ? ' — ' + p.notes : ''}</div>
+        </div>
+        <div>£${parseFloat(p.amount).toFixed(2)} ✅</div>
+      </div>
+    `).join('');
+
+  } catch (err) {
+    console.error('Failed to load payments:', err);
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>

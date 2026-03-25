@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rossington Window Cleaning — Refer a Friend</title>
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f4f8;
+}
+
+.header {
+  background: #0C447C;
+  padding: 20px 16px 24px;
+}
+
+.header h1 { color: #B5D4F4; font-size: 12px; }
+.header h2 { color: white; font-size: 20px; margin-top: 4px; }
+
+.content {
+  padding: 16px;
+  padding-bottom: 90px;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid #eee;
+}
+
+.card-title { font-size: 16px; font-weight: 600; }
+.card-sub { font-size: 13px; color: #666; margin-top: 6px; line-height: 1.5; }
+
+.window-wrap {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.window { width: 30%; text-align: center; }
+
+.window-box {
+  height: 80px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin-bottom: 6px;
+}
+
+.dirty { background: #ddd; }
+.clean { background: #E6F1FB; border: 2px solid #378ADD; }
+
+.reward { font-size: 11px; font-weight: 600; }
+
+.reward-banner {
+  background: #EAF3DE;
+  border: 1px solid #C0DD97;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #27500A;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  margin-top: 12px;
+}
+
+.btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 10px;
+  background: #0C447C;
+  color: white;
+  cursor: pointer;
+}
+
+.btn-whatsapp {
+  background: #25D366;
+  color: white;
+  margin-top: 8px;
+}
+
+.referral-box {
+  background: #E6F1FB;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: white;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0 20px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10px;
+  color: #999;
+  text-decoration: none;
+}
+
+.nav-item.active { color: #0C447C; }
+.nav-icon { font-size: 20px; }
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h1>Rossington Window Cleaning</h1>
+  <h2>Refer a friend</h2>
+</div>
+
+<div class="content">
+
+  <div class="card">
+    <div class="card-title">Earn rewards for referrals 🎉</div>
+    <div class="card-sub">
+      Each completed referral unlocks rewards. Get 2 referrals for discounts, and 3 for a FREE clean!
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Your progress</div>
+
+    <div class="window-wrap">
+      <div class="window">
+        <div class="window-box" id="window-1">🪟</div>
+        <div class="reward">10% OFF</div>
+      </div>
+      <div class="window">
+        <div class="window-box" id="window-2">🪟</div>
+        <div class="reward">10% OFF</div>
+      </div>
+      <div class="window">
+        <div class="window-box" id="window-3">🪟</div>
+        <div class="reward">FREE CLEAN</div>
+      </div>
+    </div>
+
+    <div class="progress-text" id="progress-text">Loading your progress...</div>
+    <div id="reward-banner"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Your referral link</div>
+    <div class="referral-box" id="refLink">Loading...</div>
+    <button class="btn" onclick="copyLink()">Copy link</button>
+    <button class="btn btn-whatsapp" onclick="shareWhatsApp()">Share via WhatsApp 📱</button>
+  </div>
+
+</div>
+
+<nav class="nav">
+  <a href="home.html" class="nav-item">
+    <span class="nav-icon">🏠</span>
+    <span>Home</span>
+  </a>
+  <a href="payments.html" class="nav-item">
+    <span class="nav-icon">💳</span>
+    <span>Payments</span>
+  </a>
+  <a href="tracker.html" class="nav-item">
+    <span class="nav-icon">📍</span>
+    <span>Tracker</span>
+  </a>
+  <a href="referral.html" class="nav-item active">
+    <span class="nav-icon">⭐</span>
+    <span>Refer</span>
+  </a>
+  <a href="terms.html" class="nav-item">
+    <span class="nav-icon">📄</span>
+    <span>T&Cs</span>
+  </a>
+</nav>
+
+<script src="rossington-data.js"></script>
+<script>
+async function init() {
+  try {
+    const data = await loadReferrals();
+    if (!data.success) return;
+
+    const count = data.referral_count;
+    const referralLink = 'rossingtoncleaning.co.uk/ref/' + CUSTOMER_ID;
+
+    // Update referral link
+    document.getElementById('refLink').textContent = referralLink;
+
+    // Update windows
+    for (let i = 1; i <= 3; i++) {
+      const box = document.getElementById('window-' + i);
+      if (i <= count) {
+        box.className = 'window-box clean';
+        box.textContent = '🪟✨';
+      } else {
+        box.className = 'window-box dirty';
+        box.textContent = '🪟';
+      }
+    }
+
+    // Progress text and reward banner
+    const remaining = 3 - count;
+    let progressText = '';
+    let bannerHTML = '';
+
+    if (count === 0) {
+      progressText = 'Refer your first friend to earn 10% off your next clean!';
+    } else if (count === 1) {
+      progressText = '1 referral earned — 10% off unlocked! Refer 1 more for another 10% off.';
+      bannerHTML = '<div class="reward-banner">🎉 10% off your next clean — unlocked!</div>';
+    } else if (count === 2) {
+      progressText = '2 referrals earned — 20% off unlocked! Just 1 more for a FREE clean!';
+      bannerHTML = '<div class="reward-banner">🎉 20% off your next clean — unlocked!</div>';
+    } else if (count >= 3) {
+      progressText = 'Amazing — you\'ve earned a FREE clean! 🎉';
+      bannerHTML = '<div class="reward-banner">🎉 FREE clean — unlocked! We\'ll be in touch to arrange it.</div>';
+    }
+
+    document.getElementById('progress-text').textContent = progressText;
+    document.getElementById('reward-banner').innerHTML = bannerHTML;
+
+  } catch (err) {
+    console.error('Failed to load referrals:', err);
+  }
+}
+
+function copyLink() {
+  const link = document.getElementById('refLink').textContent;
+  navigator.clipboard.writeText(link);
+  alert('Referral link copied!');
+}
+
+function shareWhatsApp() {
+  const link = document.getElementById('refLink').textContent;
+  const msg = encodeURIComponent('I use Rossington Window Cleaning — they\'re brilliant! Sign up using my link and we both benefit: ' + link);
+  window.open('https://wa.me/?text=' + msg, '_blank');
+}
+
+init();
+</script>
+
+</body>
+</html>

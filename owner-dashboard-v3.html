@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rossington Window Cleaning — Owner Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f0f4f8; min-height: 100vh; }
+  .header { background: #27500A; padding: 20px 16px 24px; }
+  .header h1 { color: #C0DD97; font-size: 12px; font-weight: 500; }
+  .header h2 { color: white; font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .header p { color: #97C459; font-size: 12px; margin-top: 4px; }
+  .content { padding: 16px; padding-bottom: 90px; margin-top: -12px; }
+  .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #eee; }
+  .card-label { font-size: 11px; color: #999; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .metric { background: #f8f9fa; border-radius: 8px; padding: 10px 12px; }
+  .metric-val { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+  .metric-val.green { color: #27500A; }
+  .metric-val.amber { color: #633806; }
+  .metric-lbl { font-size: 10px; color: #999; margin-top: 2px; }
+  .job-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; cursor: pointer; }
+  .job-row:last-child { border-bottom: none; }
+  .job-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .job-dot.complete { background: #639922; }
+  .job-dot.in_progress { background: #378ADD; }
+  .job-dot.pending { background: #D3D1C7; }
+  .job-info { flex: 1; }
+  .job-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+  .job-addr { font-size: 11px; color: #999; margin-top: 1px; }
+  .job-right { text-align: right; flex-shrink: 0; }
+  .job-price { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; margin-top: 3px; }
+  .badge-green { background: #EAF3DE; color: #27500A; }
+  .badge-red { background: #FCEBEB; color: #A32D2D; }
+  .badge-amber { background: #FAEEDA; color: #633806; }
+  .badge-blue { background: #E6F1FB; color: #0C447C; }
+  .badge-grey { background: #f0f0f0; color: #999; }
+  .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; justify-content: center; }
+  .overlay.show { display: flex; }
+  .panel { background: white; border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+  .panel-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 20px; }
+  .panel-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .panel-addr { font-size: 13px; color: #666; margin-bottom: 4px; }
+  .panel-detail { font-size: 12px; color: #999; margin-bottom: 16px; }
+  .panel-info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+  .panel-info-label { color: #999; }
+  .panel-info-value { font-weight: 600; }
+  .action-btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+  .btn-start { background: #0C447C; color: white; }
+  .btn-end { background: #27500A; color: white; }
+  .btn-paid { background: #EAF3DE; color: #27500A; border: 1px solid #C0DD97; }
+  .btn-schedule { background: #27500A; color: white; }
+  .btn-close { background: #f5f5f5; color: #666; }
+  .confirm-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 24px; }
+  .confirm-overlay.show { display: flex; }
+  .confirm-box { background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 340px; text-align: center; }
+  .confirm-icon { font-size: 40px; margin-bottom: 12px; }
+  .confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .confirm-sub { font-size: 13px; color: #666; margin-bottom: 20px; }
+  .confirm-btn { width: 100%; padding: 13px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
+  .confirm-btn-yes { background: #27500A; color: white; }
+  .confirm-btn-no { background: #f5f5f5; color: #666; }
+  .date-section { margin-top: 4px; margin-bottom: 4px; }
+  .date-label { font-size: 12px; color: #999; margin-bottom: 6px; }
+  .date-input { width: 100%; padding: 11px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 10px; outline: none; }
+  .date-input:focus { border-color: #27500A; }
+  .gate-note { font-size: 11px; color: #633806; background: #FAEEDA; padding: 4px 8px; border-radius: 6px; margin-bottom: 12px; display: inline-block; }
+  .divider { height: 1px; background: #f0f0f0; margin: 12px 0; }
+  .empty-state { text-align: center; color: #999; font-size: 13px; padding: 20px 0; }
+  .nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; padding: 10px 0 20px; }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #999; text-decoration: none; }
+  .nav-item.active { color: #27500A; }
+  .nav-icon { font-size: 20px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Rossington Window Cleaning — Owner Dashboard</h1>
+  <h2 id="header-date">Loading...</h2>
+  <p id="header-summary">Loading...</p>
+</div>
+
+<div class="content">
+  <div style="margin-top:16px"></div>
+
+  <div class="card">
+    <div class="card-label">Today's summary</div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-val green" id="m-invoiced">£0</div><div class="metric-lbl">Invoiced today</div></div>
+      <div class="metric"><div class="metric-val green" id="m-paid">£0</div><div class="metric-lbl">Paid so far</div></div>
+      <div class="metric"><div class="metric-val amber" id="m-outstanding">£0</div><div class="metric-lbl">Outstanding</div></div>
+      <div class="metric"><div class="metric-val" id="m-done">0 of 0</div><div class="metric-lbl">Cleans done</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Today's jobs</div>
+    <div id="jobs-list"><div class="empty-state">Loading...</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Scheduled this week</div>
+    <div id="upcoming-list"><div class="empty-state">Loading...</div></div>
+  </div>
+</div>
+
+<!-- CUSTOMER PANEL -->
+<div class="overlay" id="customer-overlay" onclick="closePanelOnBg(event)">
+  <div class="panel" id="customer-panel">
+    <div class="panel-handle"></div>
+    <div class="panel-name" id="panel-name">—</div>
+    <div class="panel-addr" id="panel-addr">—</div>
+    <div id="panel-gate"></div>
+    <div class="panel-detail" id="panel-detail">—</div>
+
+    <div class="panel-info-row"><span class="panel-info-label">Price</span><span class="panel-info-value" id="panel-price">—</span></div>
+    <div class="panel-info-row"><span class="panel-info-label">Balance</span><span class="panel-info-value" id="panel-balance">—</span></div>
+    <div class="panel-info-row"><span class="panel-info-label">Last clean</span><span class="panel-info-value" id="panel-last-clean">—</span></div>
+    <div class="panel-info-row"><span class="panel-info-label">Status</span><span class="panel-info-value" id="panel-status">—</span></div>
+
+    <div class="divider"></div>
+
+    <div class="date-section">
+      <div class="date-label">Set confirmed clean date (sends notification to customer)</div>
+      <input type="date" class="date-input" id="panel-date-input">
+      <button class="action-btn btn-schedule" onclick="saveDate()">Save confirmed date 📅</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <button class="action-btn btn-start" id="btn-start" onclick="startClean()">▶ Start clean</button>
+    <button class="action-btn btn-end" id="btn-end" onclick="endClean()" style="display:none">✅ End clean — notify customer</button>
+    <button class="action-btn btn-paid" id="btn-paid" onclick="showConfirmPaid()">💷 Mark as paid</button>
+    <button class="action-btn btn-close" onclick="closePanel()">Close</button>
+  </div>
+</div>
+
+<!-- CONFIRM PAID -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-icon">💷</div>
+    <div class="confirm-title" id="confirm-title">Mark as paid?</div>
+    <div class="confirm-sub" id="confirm-sub">This will clear the balance and record the payment.</div>
+    <button class="confirm-btn confirm-btn-yes" onclick="confirmPaid()">Yes, mark as paid</button>
+    <button class="confirm-btn confirm-btn-no" onclick="closeConfirm()">Cancel</button>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="owner-dashboard.html" class="nav-item active"><span class="nav-icon">📊</span><span>Dashboard</span></a>
+  <a href="#" class="nav-item"><span class="nav-icon">👥</span><span>Customers</span></a>
+  <a href="#" class="nav-item"><span class="nav-icon">📅</span><span>Schedule</span></a>
+  <a href="#" class="nav-item"><span class="nav-icon">📬</span><span>Enquiries</span></a>
+  <a href="#" class="nav-item"><span class="nav-icon">📋</span><span>HMRC</span></a>
+</nav>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
+let allCustomers = [], todaysJobs = [], currentCustomer = null;
+
+async function init() {
+  const today = new Date();
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  document.getElementById('header-date').textContent = days[today.getDay()] + ' ' + today.getDate() + ' ' + months[today.getMonth()];
+  await loadAllCustomers();
+}
+
+async function loadAllCustomers() {
+  try {
+    const res = await fetch(API_URL + '?action=getAllCustomers');
+    const data = await res.json();
+    if (!data.success) { document.getElementById('jobs-list').innerHTML = '<div class="empty-state">Could not load customers</div>'; return; }
+    allCustomers = data.customers;
+    renderDashboard();
+  } catch (err) {
+    document.getElementById('jobs-list').innerHTML = '<div class="empty-state">Connection error</div>';
+  }
+}
+
+function renderDashboard() {
+  const today = new Date().toISOString().split('T')[0];
+  const in7 = new Date(); in7.setDate(in7.getDate() + 7);
+  const in7str = in7.toISOString().split('T')[0];
+
+  todaysJobs = allCustomers.filter(c => c.next_clean_confirmed === today);
+  const upcoming = allCustomers.filter(c => c.next_clean_confirmed && c.next_clean_confirmed > today && c.next_clean_confirmed <= in7str);
+
+  let invoiced = 0, paid = 0, outstanding = 0, done = 0;
+  todaysJobs.forEach(c => {
+    const price = parseFloat(c.clean_price) || 0;
+    const bal = parseFloat(c.outstanding_balance) || 0;
+    invoiced += price;
+    if (bal <= 0) paid += price; else outstanding += bal;
+    if (c.job_status === 'complete') done++;
+  });
+
+  document.getElementById('m-invoiced').textContent = '£' + invoiced.toFixed(2);
+  document.getElementById('m-paid').textContent = '£' + paid.toFixed(2);
+  document.getElementById('m-outstanding').textContent = '£' + outstanding.toFixed(2);
+  document.getElementById('m-done').textContent = done + ' of ' + todaysJobs.length;
+  document.getElementById('header-summary').textContent = todaysJobs.length + ' jobs scheduled today';
+
+  const jobsList = document.getElementById('jobs-list');
+  jobsList.innerHTML = todaysJobs.length === 0
+    ? '<div class="empty-state">No jobs today — set confirmed dates in Schedule</div>'
+    : todaysJobs.map((c, i) => {
+        const status = c.job_status || 'pending';
+        const dotClass = ['complete','in_progress'].includes(status) ? status : 'pending';
+        const bal = parseFloat(c.outstanding_balance) || 0;
+        const payBadge = bal > 0 ? `<span class="badge badge-red">Owes £${bal.toFixed(2)}</span>` : `<span class="badge badge-green">Paid</span>`;
+        const statusBadge = status === 'complete' ? `<span class="badge badge-green">Done ✅</span>` : status === 'in_progress' ? `<span class="badge badge-blue">In progress</span>` : `<span class="badge badge-grey">Pending</span>`;
+        return `<div class="job-row" onclick="openPanel(${i},'today')">
+          <div class="job-dot ${dotClass}"></div>
+          <div class="job-info"><div class="job-name">${c.first_name} ${c.last_name}</div><div class="job-addr">${c.address}</div></div>
+          <div class="job-right"><div class="job-price">£${parseFloat(c.clean_price||0).toFixed(2)}</div>${statusBadge}</div>
+        </div>`;
+      }).join('');
+
+  const upcomingList = document.getElementById('upcoming-list');
+  upcomingList.innerHTML = upcoming.length === 0
+    ? '<div class="empty-state">No other cleans scheduled this week</div>'
+    : upcoming.map(c => {
+        const idx = allCustomers.indexOf(c);
+        return `<div class="job-row" onclick="openPanel(${idx},'all')">
+          <div class="job-dot pending"></div>
+          <div class="job-info"><div class="job-name">${c.first_name} ${c.last_name}</div><div class="job-addr">${formatDate(c.next_clean_confirmed)}</div></div>
+          <div class="job-right"><div class="job-price">£${parseFloat(c.clean_price||0).toFixed(2)}</div><span class="badge badge-blue">Scheduled</span></div>
+        </div>`;
+      }).join('');
+}
+
+function openPanel(index, source) {
+  currentCustomer = source === 'today' ? todaysJobs[index] : allCustomers[index];
+  const c = currentCustomer;
+  const status = c.job_status || 'none';
+  const bal = parseFloat(c.outstanding_balance) || 0;
+
+  document.getElementById('panel-name').textContent = c.first_name + ' ' + c.last_name;
+  document.getElementById('panel-addr').textContent = c.address;
+  document.getElementById('panel-detail').textContent = 'Phone: ' + (c.phone || '—') + '  ·  ' + (c.clean_frequency || 'Regular') + ' clean';
+  document.getElementById('panel-price').textContent = '£' + parseFloat(c.clean_price||0).toFixed(2);
+  document.getElementById('panel-last-clean').textContent = formatDate(c.last_clean) || 'Not recorded';
+  document.getElementById('panel-status').textContent = getStatusLabel(status);
+  document.getElementById('panel-date-input').value = c.next_clean_confirmed || '';
+
+  const balEl = document.getElementById('panel-balance');
+  balEl.textContent = bal > 0 ? '£' + bal.toFixed(2) + ' outstanding' : 'All paid ✅';
+  balEl.style.color = bal > 0 ? '#A32D2D' : '#27500A';
+
+  const gateEl = document.getElementById('panel-gate');
+  gateEl.innerHTML = c.gate_access ? '<span class="gate-note">🔒 Gate access required</span>' : '';
+
+  document.getElementById('btn-start').style.display = (status === 'in_progress' || status === 'complete') ? 'none' : 'block';
+  document.getElementById('btn-start').textContent = '▶ Start clean';
+  document.getElementById('btn-end').style.display = status === 'in_progress' ? 'block' : 'none';
+  document.getElementById('btn-end').textContent = '✅ End clean — notify customer';
+  document.getElementById('btn-paid').style.display = bal > 0 ? 'block' : 'none';
+
+  // Show date picker only for non-today customers
+  const isToday = source === 'today';
+  document.querySelector('.date-section').style.display = isToday ? 'none' : 'block';
+  document.querySelector('.date-section').previousElementSibling.style.display = isToday ? 'none' : 'block';
+
+  document.getElementById('customer-overlay').classList.add('show');
+}
+
+function closePanel() { document.getElementById('customer-overlay').classList.remove('show'); currentCustomer = null; }
+function closePanelOnBg(e) { if (e.target === document.getElementById('customer-overlay')) closePanel(); }
+
+async function startClean() {
+  if (!currentCustomer) return;
+  document.getElementById('btn-start').textContent = 'Starting...';
+  try {
+    await apiPost({ action: 'updateJobStatus', customer_id: currentCustomer.id, status: 'in_progress' });
+    currentCustomer.job_status = 'in_progress';
+    document.getElementById('panel-status').textContent = getStatusLabel('in_progress');
+    document.getElementById('btn-start').style.display = 'none';
+    document.getElementById('btn-end').style.display = 'block';
+    renderDashboard();
+  } catch(e) { alert('Could not update — check connection'); document.getElementById('btn-start').textContent = '▶ Start clean'; }
+}
+
+async function endClean() {
+  if (!currentCustomer) return;
+  document.getElementById('btn-end').textContent = 'Saving...';
+  try {
+    await apiPost({ action: 'updateJobStatus', customer_id: currentCustomer.id, status: 'complete' });
+    currentCustomer.job_status = 'complete';
+    document.getElementById('panel-status').textContent = getStatusLabel('complete');
+    document.getElementById('btn-end').style.display = 'none';
+    document.getElementById('btn-start').style.display = 'none';
+    renderDashboard();
+  } catch(e) { alert('Could not update — check connection'); document.getElementById('btn-end').textContent = '✅ End clean — notify customer'; }
+}
+
+async function saveDate() {
+  if (!currentCustomer) return;
+  const dateVal = document.getElementById('panel-date-input').value;
+  if (!dateVal) { alert('Please select a date first'); return; }
+  const btn = document.querySelector('.btn-schedule');
+  btn.textContent = 'Saving...';
+  try {
+    await apiPost({ action: 'setConfirmedDate', customer_id: currentCustomer.id, date: dateVal });
+    currentCustomer.next_clean_confirmed = dateVal;
+    btn.textContent = 'Date saved ✅';
+    setTimeout(() => { btn.textContent = 'Save confirmed date 📅'; }, 2000);
+    renderDashboard();
+  } catch(e) { alert('Could not save date'); btn.textContent = 'Save confirmed date 📅'; }
+}
+
+function showConfirmPaid() {
+  if (!currentCustomer) return;
+  const bal = parseFloat(currentCustomer.outstanding_balance) || 0;
+  document.getElementById('confirm-title').textContent = 'Mark ' + currentCustomer.first_name + ' as paid?';
+  document.getElementById('confirm-sub').textContent = '£' + bal.toFixed(2) + ' will be cleared and recorded.';
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+
+async function confirmPaid() {
+  closeConfirm();
+  if (!currentCustomer) return;
+  try {
+    const amount = parseFloat(currentCustomer.outstanding_balance) || 0;
+    await apiPost({ action: 'markPaid', customer_id: currentCustomer.id, amount: amount });
+    currentCustomer.outstanding_balance = 0;
+    document.getElementById('panel-balance').textContent = 'All paid ✅';
+    document.getElementById('panel-balance').style.color = '#27500A';
+    document.getElementById('btn-paid').style.display = 'none';
+    renderDashboard();
+  } catch(e) { alert('Could not mark as paid'); }
+}
+
+function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('show'); }
+
+async function apiPost(body) {
+  const res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  return res.json();
+}
+
+function formatDate(str) {
+  if (!str) return null;
+  const d = new Date(str);
+  const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const day = d.getDate();
+  const suffix = [11,12,13].includes(day) ? 'th' : (['st','nd','rd'][(day%10)-1] || 'th');
+  return days[d.getDay()] + ' ' + day + suffix + ' ' + months[d.getMonth()];
+}
+
+function getStatusLabel(status) {
+  return { none:'Not started', not_scheduled:'Not scheduled', on_the_way:'On the way', next:'Next job', in_progress:'In progress 🔵', complete:'Complete ✅' }[status] || status;
+}
+
+init();
+</script>
+</body>
+</html>

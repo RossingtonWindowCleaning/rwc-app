@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rossington Window Cleaning — Owner Login</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .container { background: white; border-radius: 16px; padding: 32px 24px; width: 90%; max-width: 360px; text-align: center; }
+  .logo { background: #27500A; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
+  .logo h1 { color: white; font-size: 18px; font-weight: 600; }
+  .logo p { color: #C0DD97; font-size: 12px; margin-top: 4px; }
+  .input-group { margin-bottom: 16px; text-align: left; }
+  .input-group label { font-size: 13px; color: #555; margin-bottom: 6px; display: block; }
+  .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+  .input-group input:focus { border-color: #27500A; }
+  .btn { width: 100%; padding: 12px; background: #27500A; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .btn:hover { background: #3B6D11; }
+  .divider { margin: 20px 0; border: none; border-top: 1px solid #eee; }
+  .customer-link { font-size: 13px; color: #0C447C; cursor: pointer; text-decoration: underline; }
+  .error { background: #FCEBEB; color: #A32D2D; font-size: 13px; padding: 10px; border-radius: 8px; margin-top: 12px; display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">
+    <h1>Rossington Window Cleaning</h1>
+    <p>Owner Access</p>
+  </div>
+  <div class="input-group">
+    <label>Owner username</label>
+    <input type="text" id="username" placeholder="Enter your username">
+  </div>
+  <div class="input-group">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Enter your password">
+  </div>
+  <button class="btn" onclick="ownerLogin()">Sign in as owner</button>
+  <div class="error" id="error-msg">Incorrect username or password. Please try again.</div>
+  <hr class="divider">
+  <span class="customer-link" onclick="window.location.href='index.html'">Customer login instead</span>
+</div>
+
+<script>
+function ownerLogin() {
+  var username = document.getElementById('username').value;
+  var password = document.getElementById('password').value;
+  if (username === 'Rossingtonwindowcleaning' && password === 'Rossington') {
+    window.location.href = 'owner-dashboard.html';
+  } else {
+    document.getElementById('error-msg').style.display = 'block';
+  }
+}
+</script>
+
+</body>
+</html>
