@@ -180,8 +180,13 @@ async function init() {
   try {
     // Load customer data first to get accurate balance
     const customerData = await loadCustomerData();
+    console.log('Customer data:', JSON.stringify(customerData));
     const data = await loadPayments();
-    if (!data.success) return;
+    console.log('Payment data:', JSON.stringify(data));
+    if (!data.success) {
+      document.getElementById('outstanding-title').textContent = 'Error loading data';
+      return;
+    }
 
     const balance = customerData.success 
       ? parseFloat(customerData.customer.outstanding_balance) || 0
