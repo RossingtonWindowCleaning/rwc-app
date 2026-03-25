@@ -122,10 +122,47 @@ body {
 
 .nav-item.active { color: #0C447C; }
 .nav-icon { font-size: 20px; }
+
+  /* LOADING SPINNER */
+  .loader-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.85);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .loader-overlay.hidden { display: none; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #e0e0e0;
+    border-top-color: #0C447C;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .spinner-text {
+    font-size: 13px;
+    color: #666;
+    font-family: Arial, sans-serif;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
 </style>
 </head>
 
 <body>
+
+
+<!-- LOADING OVERLAY -->
+<div class="loader-overlay" id="loader">
+  <div class="spinner"></div>
+  <div class="spinner-text">Loading payments...</div>
+</div>
 
 <div class="header">
   <h1>Rossington Window Cleaning</h1>
@@ -177,6 +214,7 @@ body {
 <script src="rossington-data.js"></script>
 <script>
 async function init() {
+  showLoader();
   try {
     // Load customer data first to get accurate balance
     const customerData = await loadCustomerData();
@@ -184,10 +222,12 @@ async function init() {
     const data = await loadPayments();
     console.log('Payment data:', JSON.stringify(data));
     if (!data.success) {
+      hideLoader();
       document.getElementById('outstanding-title').textContent = 'Error loading data';
       return;
     }
 
+    hideLoader();
     const balance = customerData.success 
       ? parseFloat(customerData.customer.outstanding_balance) || 0
       : parseFloat(data.outstanding_balance) || 0;
@@ -233,6 +273,10 @@ async function init() {
 }
 
 init();
+
+function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
+function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
+
 </script>
 
 </body>
