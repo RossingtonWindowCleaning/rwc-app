@@ -1,0 +1,25 @@
+{
+  "name": "Rossington Window Cleaning",
+  "short_name": "Rossington WC",
+  "description": "Your window cleaning customer portal",
+  "start_url": "/rwc-app/home.html",
+  "scope": "/rwc-app/",
+  "display": "standalone",
+  "background_color": "#0C447C",
+  "theme_color": "#0C447C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
