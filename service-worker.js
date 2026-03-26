@@ -2,7 +2,7 @@
 // service-worker.js — Rossington Window Cleaning PWA v2
 // ============================================================
 
-const CACHE_NAME = 'rwc-v2';
+const CACHE_NAME = 'rwc-v3';
 const APP_SHELL = [
   './home.html',
   './payments.html',
@@ -13,7 +13,8 @@ const APP_SHELL = [
   './rossington-data.js',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './logo-header.png'
 ];
 
 self.addEventListener('install', event => {
