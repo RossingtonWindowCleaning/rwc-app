@@ -164,7 +164,11 @@ body {
 
   <div class="card">
     <div class="card-label">Current status</div>
-    <div class="status-icon" id="status-icon">⏳</div>
+    <div class=date-display>
+      <div class=date-day id=today-day></div>
+      <div class=date-full id=today-date></div>
+    </div>
+    <div class=status-icon id=status-icon style=display:none>⏳</div>
     <div class="status-message" id="status-message">Loading...</div>
     <div class="status-sub" id="status-sub"></div>
     <span class="badge badge-blue" id="status-badge"></span>
@@ -224,6 +228,15 @@ const STATUS_CONFIG = {
 
 async function init() {
   showLoader();
+  // Show today's date
+  const now = new Date();
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const day = now.getDate();
+  const suffix = [11,12,13].includes(day) ? "th" : (["st","nd","rd"][(day%10)-1] || "th");
+  document.getElementById("today-day").textContent = days[now.getDay()];
+  document.getElementById("today-date").textContent = day + suffix + " " + months[now.getMonth()] + " " + now.getFullYear();
+
   try {
     const data = await loadAllData();
     if (!data.success) { hideLoader(); return; }
@@ -232,7 +245,13 @@ async function init() {
     const job = data.tracker;
     const config = STATUS_CONFIG[job.status] || STATUS_CONFIG['none'];
 
-    document.getElementById('status-icon').textContent = config.icon;
+    const iconEl = document.getElementById('status-icon');
+    if (job.status && job.status !== 'not_scheduled' && job.status !== 'none') {
+      iconEl.style.display = 'block';
+      iconEl.textContent = config.icon;
+    } else {
+      iconEl.style.display = 'none';
+    }
     document.getElementById('status-message').textContent = config.message;
     document.getElementById('status-sub').textContent = config.sub;
     document.getElementById('status-badge').textContent = config.badge;
