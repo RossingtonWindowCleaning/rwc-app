@@ -26,10 +26,19 @@ body {
 }
 
 .header-text { flex: 1; }
+.header h1 { color: #B5D4F4; font-size: 12px; }
 .header h2 { color: white; font-size: 20px; margin-top: 4px; }
 
-.header-logo { flex-shrink: 0; margin-left: 12px; }
-.header-logo img { height: 44px; width: auto; display: block; }
+.header-logo {
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.header-logo img {
+  height: 44px;
+  width: auto;
+  display: block;
+}
 
 .content {
   padding: 16px;
@@ -45,22 +54,70 @@ body {
   border: 1px solid #eee;
 }
 
-.card-label { font-size: 11px; color: #999; margin-bottom: 8px; text-transform: uppercase; }
+.card-label {
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
 .card-title { font-size: 16px; font-weight: 600; }
 .card-sub { font-size: 13px; color: #666; margin-top: 4px; }
 
-.badge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; margin-top: 8px; }
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 8px;
+}
+
 .badge-green { background: #EAF3DE; color: #27500A; }
 .badge-red { background: #FCEBEB; color: #A32D2D; }
 
-.payment-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
-.payment-row:last-child { border-bottom: none; }
-.payment-method { font-size: 11px; color: #999; margin-top: 2px; }
+.payment-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+  font-size: 13px;
+}
 
-.btn { width: 100%; padding: 13px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; margin-top: 10px; cursor: pointer; }
+.payment-row:last-child { border-bottom: none; }
+
+.payment-method {
+  font-size: 11px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
 .btn-overdue { background: #A32D2D; color: white; }
-.overdue-text { font-size: 11px; color: #A32D2D; text-align: center; margin-top: 6px; }
-.empty-state { text-align: center; color: #999; font-size: 13px; padding: 20px 0; }
+
+.overdue-text {
+  font-size: 11px;
+  color: #A32D2D;
+  text-align: center;
+  margin-top: 6px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  padding: 20px 0;
+}
 
 /* BANK TRANSFER PANEL */
 .pay-overlay {
@@ -84,9 +141,25 @@ body {
   overflow-y: auto;
 }
 
-.pay-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 20px; }
-.pay-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-.pay-sub { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+.pay-handle {
+  width: 40px; height: 4px;
+  background: #ddd;
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.pay-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.pay-sub {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
 
 .pay-amount {
   background: #FCEBEB;
@@ -97,42 +170,145 @@ body {
   justify-content: space-between;
   align-items: center;
 }
+
 .pay-amount-label { font-size: 12px; color: #A32D2D; }
 .pay-amount-value { font-size: 22px; font-weight: 700; color: #A32D2D; }
 
-.detail-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
 .detail-row:last-of-type { border-bottom: none; }
+
 .detail-label { font-size: 11px; color: #999; margin-bottom: 2px; }
 .detail-value { font-size: 14px; font-weight: 600; color: #1a1a1a; }
 
-.copy-btn { background: #E6F1FB; color: #0C447C; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; margin-left: 12px; }
+.copy-btn {
+  background: #E6F1FB;
+  color: #0C447C;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
 .copy-btn.copied { background: #EAF3DE; color: #27500A; }
 
 .pay-divider { height: 1px; background: #f0f0f0; margin: 16px 0; }
 
-.btn-banking { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; background: #0C447C; color: white; }
-.btn-sent { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; background: #27500A; color: white; }
-.btn-close-pay { width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; background: #f5f5f5; color: #666; }
+.btn-banking {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 10px;
+  background: #0C447C;
+  color: white;
+}
 
-.sent-confirmation { display: none; text-align: center; padding: 16px 0 8px; }
+.btn-sent {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 10px;
+  background: #27500A;
+  color: white;
+}
+
+.btn-close-pay {
+  width: 100%;
+  padding: 13px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f5f5f5;
+  color: #666;
+}
+
+.sent-confirmation {
+  display: none;
+  text-align: center;
+  padding: 16px 0 8px;
+}
+
 .sent-confirmation .sent-icon { font-size: 40px; margin-bottom: 8px; }
 .sent-confirmation .sent-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
 .sent-confirmation .sent-sub { font-size: 13px; color: #666; line-height: 1.5; }
 
-.nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; padding: 10px 0 20px; }
-.nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #999; text-decoration: none; }
+.nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: white;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0 20px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10px;
+  color: #999;
+  text-decoration: none;
+}
+
 .nav-item.active { color: #0C447C; }
 .nav-icon { font-size: 20px; }
 
-.loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.85); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
-.loader-overlay.hidden { display: none; }
-.spinner { width: 40px; height: 40px; border: 4px solid #e0e0e0; border-top-color: #0C447C; border-radius: 50%; animation: spin 0.8s linear infinite; }
-.spinner-text { font-size: 13px; color: #666; font-family: Arial, sans-serif; }
-@keyframes spin { to { transform: rotate(360deg); } }
+  /* LOADING SPINNER */
+  .loader-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.85);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .loader-overlay.hidden { display: none; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #e0e0e0;
+    border-top-color: #0C447C;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .spinner-text {
+    font-size: 13px;
+    color: #666;
+    font-family: Arial, sans-serif;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
 </style>
+<!-- v2 -->
 </head>
 
 <body>
+
 
 <!-- LOADING OVERLAY -->
 <div class="loader-overlay" id="loader">
@@ -151,7 +327,7 @@ body {
 
 <div class="content">
 
-  <div class="card">
+  <div class="card" id="outstanding-card">
     <div class="card-label">Outstanding payment</div>
     <div class="card-title" id="outstanding-title">Loading...</div>
     <div class="card-sub" id="outstanding-sub"></div>
@@ -169,8 +345,8 @@ body {
 </div>
 
 <!-- BANK TRANSFER PANEL -->
-<div class="pay-overlay" id="pay-overlay">
-  <div class="pay-panel">
+<div class="pay-overlay" id="pay-overlay" onclick="closePanelOnBg(event)">
+  <div class="pay-panel" id="pay-panel">
     <div class="pay-handle"></div>
     <div class="pay-title">Bank transfer 💷</div>
     <div class="pay-sub">Use your banking app to send payment to the details below. Tap "I've sent it" once done and we'll confirm receipt.</div>
@@ -183,37 +359,44 @@ body {
     <div class="detail-row">
       <div>
         <div class="detail-label">Account name</div>
-        <div class="detail-value" id="detail-name">Test Test</div>
+        <!-- ✏️ REPLACE WITH YOUR FULL NAME -->
+        <div class="detail-value" id="detail-name">YOUR FULL NAME HERE</div>
       </div>
-      <button class="copy-btn" id="copy-name">Copy</button>
+      <button class="copy-btn" onclick="copyDetail('detail-name', this)">Copy</button>
     </div>
 
     <div class="detail-row">
       <div>
         <div class="detail-label">Sort code</div>
-        <div class="detail-value" id="detail-sort">01-23-45</div>
+        <!-- ✏️ REPLACE WITH YOUR SORT CODE e.g. 12-34-56 -->
+        <div class="detail-value" id="detail-sort">00-00-00</div>
       </div>
-      <button class="copy-btn" id="copy-sort">Copy</button>
+      <button class="copy-btn" onclick="copyDetail('detail-sort', this)">Copy</button>
     </div>
 
     <div class="detail-row">
       <div>
         <div class="detail-label">Account number</div>
-        <div class="detail-value" id="detail-acc">12345678</div>
+        <!-- ✏️ REPLACE WITH YOUR ACCOUNT NUMBER e.g. 12345678 -->
+        <div class="detail-value" id="detail-acc">00000000</div>
       </div>
-      <button class="copy-btn" id="copy-acc">Copy</button>
+      <button class="copy-btn" onclick="copyDetail('detail-acc', this)">Copy</button>
     </div>
 
-    <div style="background:#FFF8E6;border-radius:8px;padding:10px 12px;margin-top:12px;font-size:12px;color:#633806;">
-      📝 <strong>Reference:</strong> Please use your home address as the payment reference so we can match it to your account.
+    <div class="detail-row">
+      <div>
+        <div class="detail-label">Reference</div>
+        <div class="detail-value" id="detail-ref">Loading...</div>
+      </div>
+      <button class="copy-btn" onclick="copyDetail('detail-ref', this)">Copy</button>
     </div>
 
     <div class="pay-divider"></div>
 
     <div id="pay-actions">
-      <button class="btn-banking" id="btn-banking">📱 Open my banking app</button>
-      <button class="btn-sent" id="btn-sent">✅ I've sent the payment</button>
-      <button class="btn-close-pay" id="btn-cancel">Cancel</button>
+      <button class="btn-banking" onclick="openBankingApp()">📱 Open my banking app</button>
+      <button class="btn-sent" onclick="iHavePaid()">✅ I've sent the payment</button>
+      <button class="btn-close-pay" onclick="closePayPanel()">Cancel</button>
     </div>
 
     <div class="sent-confirmation" id="sent-confirmation">
@@ -221,7 +404,7 @@ body {
       <div class="sent-title">Thanks — payment noted!</div>
       <div class="sent-sub">We'll check our account and confirm receipt shortly. Your balance will be updated once we've verified it.</div>
       <br>
-      <button class="btn-close-pay" id="btn-close-confirm">Close</button>
+      <button class="btn-close-pay" onclick="closePayPanel()">Close</button>
     </div>
 
   </div>
@@ -252,60 +435,52 @@ body {
 
 <script src="rossington-data.js"></script>
 <script>
+// ✏️ REPLACE THESE WITH YOUR REAL BANK DETAILS
+const BANK_NAME    = 'YOUR FULL NAME HERE';
+const BANK_SORT    = '00-00-00';
+const BANK_ACC     = '00000000';
 
 let currentBalance = 0;
-
-// All buttons wired with addEventListener — no onclick in HTML
-document.getElementById('btn-banking').addEventListener('click', openBankingApp);
-document.getElementById('btn-sent').addEventListener('click', iHavePaid);
-document.getElementById('btn-cancel').addEventListener('click', closePayPanel);
-document.getElementById('btn-close-confirm').addEventListener('click', closePayPanel);
-document.getElementById('copy-name').addEventListener('click', function() { copyDetail('detail-name', this); });
-document.getElementById('copy-sort').addEventListener('click', function() { copyDetail('detail-sort', this); });
-document.getElementById('copy-acc').addEventListener('click',  function() { copyDetail('detail-acc',  this); });
-
-// Close panel when tapping dark background
-document.getElementById('pay-overlay').addEventListener('click', function(e) {
-  if (e.target === this) closePayPanel();
-});
+let currentAddress = '';
 
 async function init() {
   showLoader();
   try {
     const data = await loadAllData();
-    hideLoader();
-
     if (!data.success) {
+      hideLoader();
       document.getElementById('outstanding-title').textContent = 'Error loading data';
       return;
     }
 
-    const c = data.customer;
-    const balance = parseFloat(c ? c.outstanding_balance : 0) || 0;
+    hideLoader();
+    const balance = parseFloat(data.customer ? data.customer.outstanding_balance : 0) || 0;
     currentBalance = balance;
+    currentAddress = data.customer ? data.customer.address : '';
 
-    // Set dynamic fields in panel
+    // Pre-fill bank detail constants into panel
+    document.getElementById('detail-name').textContent = BANK_NAME;
+    document.getElementById('detail-sort').textContent = BANK_SORT;
+    document.getElementById('detail-acc').textContent  = BANK_ACC;
+    document.getElementById('detail-ref').textContent  = currentAddress || 'Your address';
     document.getElementById('panel-amount').textContent = '£' + balance.toFixed(2);
 
+    // Outstanding balance card
     if (balance > 0) {
       document.getElementById('outstanding-title').textContent = '£' + balance.toFixed(2) + ' due';
-      document.getElementById('outstanding-sub').textContent = (c && c.last_clean) ? 'Last clean: ' + formatDate(c.last_clean) : '';
+      document.getElementById('outstanding-sub').textContent = 'Last clean: ' + formatDate(data.customer ? data.customer.last_clean : null);
       document.getElementById('outstanding-badge').textContent = 'Overdue';
       document.getElementById('outstanding-badge').className = 'badge badge-red';
-
       const payBtn = document.createElement('button');
       payBtn.className = 'btn btn-overdue';
       payBtn.style.marginTop = '10px';
       payBtn.textContent = 'Pay now — £' + balance.toFixed(2);
       payBtn.addEventListener('click', openPayPanel);
-
       const overdueText = document.createElement('div');
       overdueText.className = 'overdue-text';
       overdueText.textContent = 'Payment overdue — please pay to avoid service suspension';
-
       document.getElementById('outstanding-btn').appendChild(payBtn);
       document.getElementById('outstanding-btn').appendChild(overdueText);
-
     } else {
       document.getElementById('outstanding-title').textContent = 'Nothing outstanding ✅';
       document.getElementById('outstanding-sub').textContent = 'You\'re all up to date';
@@ -333,7 +508,7 @@ async function init() {
   } catch (err) {
     console.error('Failed to load payments:', err);
     hideLoader();
-    document.getElementById('outstanding-title').textContent = 'Could not load data — check connection';
+    document.getElementById('outstanding-title').textContent = 'Could not load data';
   }
 }
 
@@ -347,12 +522,16 @@ function closePayPanel() {
   document.getElementById('pay-overlay').classList.remove('show');
 }
 
+function closePanelOnBg(e) {
+  if (e.target === document.getElementById('pay-overlay')) closePayPanel();
+}
+
 function openBankingApp() {
-  alert('Please open your banking app and use the details shown to make the transfer. Then tap "I\'ve sent the payment".');
+  alert('Please open your banking app and send payment to the details shown. Then tap "I\'ve sent the payment" below.');
 }
 
 async function iHavePaid() {
-  const btn = document.getElementById('btn-sent');
+  const btn = document.querySelector('.btn-sent');
   btn.textContent = 'Notifying...';
   btn.disabled = true;
   try {
@@ -369,17 +548,17 @@ function copyDetail(id, btn) {
   navigator.clipboard.writeText(text).then(() => {
     btn.textContent = 'Copied ✓';
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
-  }).catch(() => {
-    btn.textContent = 'Failed';
-    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
   });
 }
 
+init();
+
 function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
 function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
-
-init();
 </script>
 
 <script>
