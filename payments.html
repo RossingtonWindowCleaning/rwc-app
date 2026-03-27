@@ -204,12 +204,8 @@ body {
       <button class="copy-btn" id="copy-acc">Copy</button>
     </div>
 
-    <div class="detail-row">
-      <div>
-        <div class="detail-label">Reference</div>
-        <div class="detail-value" id="detail-ref">—</div>
-      </div>
-      <button class="copy-btn" id="copy-ref">Copy</button>
+    <div style="background:#FFF8E6;border-radius:8px;padding:10px 12px;margin-top:12px;font-size:12px;color:#633806;">
+      📝 <strong>Reference:</strong> Please use your home address as the payment reference so we can match it to your account.
     </div>
 
     <div class="pay-divider"></div>
@@ -267,7 +263,6 @@ document.getElementById('btn-close-confirm').addEventListener('click', closePayP
 document.getElementById('copy-name').addEventListener('click', function() { copyDetail('detail-name', this); });
 document.getElementById('copy-sort').addEventListener('click', function() { copyDetail('detail-sort', this); });
 document.getElementById('copy-acc').addEventListener('click',  function() { copyDetail('detail-acc',  this); });
-document.getElementById('copy-ref').addEventListener('click',  function() { copyDetail('detail-ref',  this); });
 
 // Close panel when tapping dark background
 document.getElementById('pay-overlay').addEventListener('click', function(e) {
@@ -290,7 +285,6 @@ async function init() {
     currentBalance = balance;
 
     // Set dynamic fields in panel
-    document.getElementById('detail-ref').textContent = (c && c.address) ? c.address : 'Your address';
     document.getElementById('panel-amount').textContent = '£' + balance.toFixed(2);
 
     if (balance > 0) {
