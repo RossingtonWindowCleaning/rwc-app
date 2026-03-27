@@ -436,9 +436,9 @@ body {
 <script src="rossington-data.js"></script>
 <script>
 // ✏️ REPLACE THESE WITH YOUR REAL BANK DETAILS
-const BANK_NAME    = Test Test;
-const BANK_SORT    = 12-34-56;
-const BANK_ACC     = 12345678;
+const BANK_NAME    = 'YOUR FULL NAME HERE';
+const BANK_SORT    = '00-00-00';
+const BANK_ACC     = '00000000';
 
 let currentBalance = 0;
 let currentAddress = '';
@@ -471,9 +471,16 @@ async function init() {
       document.getElementById('outstanding-sub').textContent = 'Last clean: ' + formatDate(data.customer ? data.customer.last_clean : null);
       document.getElementById('outstanding-badge').textContent = 'Overdue';
       document.getElementById('outstanding-badge').className = 'badge badge-red';
-      document.getElementById('outstanding-btn').innerHTML =
-        '<button class="btn btn-overdue" onclick="openPayPanel()">Pay now — £' + balance.toFixed(2) + '</button>' +
-        '<div class="overdue-text">Payment overdue — please pay to avoid service suspension</div>';
+      const payBtn = document.createElement('button');
+      payBtn.className = 'btn btn-overdue';
+      payBtn.style.marginTop = '10px';
+      payBtn.textContent = 'Pay now — £' + balance.toFixed(2);
+      payBtn.addEventListener('click', openPayPanel);
+      const overdueText = document.createElement('div');
+      overdueText.className = 'overdue-text';
+      overdueText.textContent = 'Payment overdue — please pay to avoid service suspension';
+      document.getElementById('outstanding-btn').appendChild(payBtn);
+      document.getElementById('outstanding-btn').appendChild(overdueText);
     } else {
       document.getElementById('outstanding-title').textContent = 'Nothing outstanding ✅';
       document.getElementById('outstanding-sub').textContent = 'You\'re all up to date';
