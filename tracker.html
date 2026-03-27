@@ -20,11 +20,26 @@ body {
 .header {
   background: #0C447C;
   padding: 20px 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
+.header-text { flex: 1; }
 .header h1 { color: #B5D4F4; font-size: 12px; }
 .header h2 { color: white; font-size: 20px; margin-top: 4px; }
 .header p { color: #85B7EB; font-size: 13px; margin-top: 4px; }
+
+.header-logo {
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.header-logo img {
+  height: 44px;
+  width: auto;
+  display: block;
+}
 
 .content {
   padding: 16px;
@@ -158,9 +173,14 @@ body {
 </div>
 
 <div class="header">
-  <h1>Rossington Window Cleaning</h1>
-  <h2>Live progress tracker</h2>
-  <p>Updated in real time as cleans are completed</p>
+  <div class="header-text">
+    <h1>Rossington Window Cleaning</h1>
+    <h2>Live progress tracker</h2>
+    <p>Updated in real time as cleans are completed</p>
+  </div>
+  <div class="header-logo">
+    <img src="logoheader.png" alt="Rossington Window Cleaning">
+  </div>
 </div>
 
 <div class="content">
