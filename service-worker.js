@@ -1,8 +1,12 @@
 // ============================================================
-// service-worker.js — Rossington Window Cleaning PWA v2
+// service-worker.js — Rossington Window Cleaning PWA
+// ============================================================
+// ⬆️ BUMP THE VERSION NUMBER EVERY TIME YOU DEPLOY CHANGES
+// e.g. rwc-v4 → rwc-v5 → rwc-v6
+// This forces all devices to clear old cache and load fresh files
 // ============================================================
 
-const CACHE_NAME = 'rwc-v3';
+const CACHE_NAME = 'rwc-v4';
 const APP_SHELL = [
   './home.html',
   './payments.html',
