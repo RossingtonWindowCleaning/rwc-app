@@ -119,6 +119,139 @@ body {
   padding: 20px 0;
 }
 
+/* BANK TRANSFER PANEL */
+.pay-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: flex-end;
+  justify-content: center;
+}
+.pay-overlay.show { display: flex; }
+
+.pay-panel {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 20px 48px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.pay-handle {
+  width: 40px; height: 4px;
+  background: #ddd;
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.pay-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.pay-sub {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.pay-amount {
+  background: #FCEBEB;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pay-amount-label { font-size: 12px; color: #A32D2D; }
+.pay-amount-value { font-size: 22px; font-weight: 700; color: #A32D2D; }
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.detail-row:last-of-type { border-bottom: none; }
+
+.detail-label { font-size: 11px; color: #999; margin-bottom: 2px; }
+.detail-value { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+
+.copy-btn {
+  background: #E6F1FB;
+  color: #0C447C;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.copy-btn.copied { background: #EAF3DE; color: #27500A; }
+
+.pay-divider { height: 1px; background: #f0f0f0; margin: 16px 0; }
+
+.btn-banking {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 10px;
+  background: #0C447C;
+  color: white;
+}
+
+.btn-sent {
+  width: 100%;
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 10px;
+  background: #27500A;
+  color: white;
+}
+
+.btn-close-pay {
+  width: 100%;
+  padding: 13px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #f5f5f5;
+  color: #666;
+}
+
+.sent-confirmation {
+  display: none;
+  text-align: center;
+  padding: 16px 0 8px;
+}
+
+.sent-confirmation .sent-icon { font-size: 40px; margin-bottom: 8px; }
+.sent-confirmation .sent-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.sent-confirmation .sent-sub { font-size: 13px; color: #666; line-height: 1.5; }
+
 .nav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
@@ -211,6 +344,72 @@ body {
 
 </div>
 
+<!-- BANK TRANSFER PANEL -->
+<div class="pay-overlay" id="pay-overlay" onclick="closePanelOnBg(event)">
+  <div class="pay-panel" id="pay-panel">
+    <div class="pay-handle"></div>
+    <div class="pay-title">Bank transfer 💷</div>
+    <div class="pay-sub">Use your banking app to send payment to the details below. Tap "I've sent it" once done and we'll confirm receipt.</div>
+
+    <div class="pay-amount">
+      <div class="pay-amount-label">Amount to pay</div>
+      <div class="pay-amount-value" id="panel-amount">£0.00</div>
+    </div>
+
+    <div class="detail-row">
+      <div>
+        <div class="detail-label">Account name</div>
+        <!-- ✏️ REPLACE WITH YOUR FULL NAME -->
+        <div class="detail-value" id="detail-name">YOUR FULL NAME HERE</div>
+      </div>
+      <button class="copy-btn" onclick="copyDetail('detail-name', this)">Copy</button>
+    </div>
+
+    <div class="detail-row">
+      <div>
+        <div class="detail-label">Sort code</div>
+        <!-- ✏️ REPLACE WITH YOUR SORT CODE e.g. 12-34-56 -->
+        <div class="detail-value" id="detail-sort">00-00-00</div>
+      </div>
+      <button class="copy-btn" onclick="copyDetail('detail-sort', this)">Copy</button>
+    </div>
+
+    <div class="detail-row">
+      <div>
+        <div class="detail-label">Account number</div>
+        <!-- ✏️ REPLACE WITH YOUR ACCOUNT NUMBER e.g. 12345678 -->
+        <div class="detail-value" id="detail-acc">00000000</div>
+      </div>
+      <button class="copy-btn" onclick="copyDetail('detail-acc', this)">Copy</button>
+    </div>
+
+    <div class="detail-row">
+      <div>
+        <div class="detail-label">Reference</div>
+        <div class="detail-value" id="detail-ref">Loading...</div>
+      </div>
+      <button class="copy-btn" onclick="copyDetail('detail-ref', this)">Copy</button>
+    </div>
+
+    <div class="pay-divider"></div>
+
+    <div id="pay-actions">
+      <button class="btn-banking" onclick="openBankingApp()">📱 Open my banking app</button>
+      <button class="btn-sent" onclick="iHavePaid()">✅ I've sent the payment</button>
+      <button class="btn-close-pay" onclick="closePayPanel()">Cancel</button>
+    </div>
+
+    <div class="sent-confirmation" id="sent-confirmation">
+      <div class="sent-icon">🙏</div>
+      <div class="sent-title">Thanks — payment noted!</div>
+      <div class="sent-sub">We'll check our account and confirm receipt shortly. Your balance will be updated once we've verified it.</div>
+      <br>
+      <button class="btn-close-pay" onclick="closePayPanel()">Close</button>
+    </div>
+
+  </div>
+</div>
+
 <nav class="nav">
   <a href="home.html" class="nav-item">
     <span class="nav-icon">🏠</span>
@@ -236,6 +435,14 @@ body {
 
 <script src="rossington-data.js"></script>
 <script>
+// ✏️ REPLACE THESE WITH YOUR REAL BANK DETAILS
+const BANK_NAME    = 'YOUR FULL NAME HERE';
+const BANK_SORT    = '00-00-00';
+const BANK_ACC     = '00000000';
+
+let currentBalance = 0;
+let currentAddress = '';
+
 async function init() {
   showLoader();
   try {
@@ -247,18 +454,25 @@ async function init() {
     }
 
     hideLoader();
-    const balance = parseFloat(data.outstanding_balance) || 0;
+    const balance = parseFloat(data.customer ? data.customer.outstanding_balance : 0) || 0;
+    currentBalance = balance;
+    currentAddress = data.customer ? data.customer.address : '';
 
-    // Outstanding balance
+    // Pre-fill bank detail constants into panel
+    document.getElementById('detail-name').textContent = BANK_NAME;
+    document.getElementById('detail-sort').textContent = BANK_SORT;
+    document.getElementById('detail-acc').textContent  = BANK_ACC;
+    document.getElementById('detail-ref').textContent  = currentAddress || 'Your address';
+    document.getElementById('panel-amount').textContent = '£' + balance.toFixed(2);
+
+    // Outstanding balance card
     if (balance > 0) {
       document.getElementById('outstanding-title').textContent = '£' + balance.toFixed(2) + ' due';
-      if (customerData.success) {
-        document.getElementById('outstanding-sub').textContent = 'Last clean: ' + formatDate(data.customer ? data.customer.last_clean : null);
-      }
+      document.getElementById('outstanding-sub').textContent = 'Last clean: ' + formatDate(data.customer ? data.customer.last_clean : null);
       document.getElementById('outstanding-badge').textContent = 'Overdue';
       document.getElementById('outstanding-badge').className = 'badge badge-red';
       document.getElementById('outstanding-btn').innerHTML =
-        '<button class="btn btn-overdue">Pay now — £' + balance.toFixed(2) + '</button>' +
+        '<button class="btn btn-overdue" onclick="openPayPanel()">Pay now — £' + balance.toFixed(2) + '</button>' +
         '<div class="overdue-text">Payment overdue — please pay to avoid service suspension</div>';
     } else {
       document.getElementById('outstanding-title').textContent = 'Nothing outstanding ✅';
@@ -289,11 +503,58 @@ async function init() {
   }
 }
 
+function openPayPanel() {
+  document.getElementById('pay-overlay').classList.add('show');
+  document.getElementById('pay-actions').style.display = 'block';
+  document.getElementById('sent-confirmation').style.display = 'none';
+}
+
+function closePayPanel() {
+  document.getElementById('pay-overlay').classList.remove('show');
+}
+
+function closePanelOnBg(e) {
+  if (e.target === document.getElementById('pay-overlay')) closePayPanel();
+}
+
+function openBankingApp() {
+  // Opens the device's default banking app — no pre-fill
+  window.location.href = 'bank://';
+  // Fallback after short delay if deep link doesn't fire
+  setTimeout(() => {
+    alert('If your banking app didn\'t open, please open it manually and use the details shown.');
+  }, 1500);
+}
+
+async function iHavePaid() {
+  const btn = document.querySelector('.btn-sent');
+  btn.textContent = 'Notifying...';
+  btn.disabled = true;
+  try {
+    await apiPost({ action: 'paymentNotification', amount: currentBalance });
+  } catch(e) {
+    console.error('Notification failed', e);
+  }
+  document.getElementById('pay-actions').style.display = 'none';
+  document.getElementById('sent-confirmation').style.display = 'block';
+}
+
+function copyDetail(id, btn) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+
 init();
 
 function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
 function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
-
 </script>
 
 <script>
