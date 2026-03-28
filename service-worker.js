@@ -6,7 +6,7 @@
 // This forces all devices to clear old cache and load fresh files
 // ============================================================
 
-const CACHE_NAME = 'rwc-v13';
+const CACHE_NAME = 'rwc-v15';
 const APP_SHELL = [
   './home.html',
   './payments.html',
@@ -39,7 +39,12 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  if (url.hostname === 'script.google.com') return;
+  
+  // Always let API calls go directly to network — never cache or intercept
+  if (url.hostname === 'script.google.com') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
 
   event.respondWith(
     fetch(event.request)
