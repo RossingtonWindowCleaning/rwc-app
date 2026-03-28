@@ -1,7 +1,8 @@
 // ============================================================
-// rossington-data.js — v2
+// rossington-data.js — v3
 // Single API call loads all data upfront, cached in session
 // Every page reads from memory = instant tab switching
+// OneSignal push notification integration added
 // ============================================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
@@ -15,6 +16,26 @@ function getCustomerIdFromURL() {
   const params = new URLSearchParams(window.location.search);
   return params.get("customer_id");
 }
+
+// ============================================================
+// ONESIGNAL SETUP
+// ============================================================
+function initOneSignal() {
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "393033c6-1fca-4e52-9d35-cde42963ffff",
+      serviceWorkerPath: "push/onesignal/OneSignalSDKWorker.js",
+      serviceWorkerParam: { scope: "/rwc-app/push/onesignal/" }
+    });
+
+    // Tag this device with the customer ID so we can send targeted notifications
+    OneSignal.login(CUSTOMER_ID);
+  });
+}
+
+// Run OneSignal init on every page
+initOneSignal();
 
 // ============================================================
 // MAIN — loads all data in one call, caches it
