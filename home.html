@@ -225,6 +225,38 @@ body {
 .popup-btn-primary { background: #0C447C; color: white; }
 .popup-btn-secondary { background: #f5f5f5; color: #666; }
 
+/* BANK TRANSFER PANEL */
+.pay-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: flex-end;
+  justify-content: center;
+}
+.pay-overlay.show { display: flex; }
+.pay-panel { background: white; border-radius: 20px 20px 0 0; padding: 24px 20px 48px; width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; }
+.pay-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 20px; }
+.pay-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.pay-sub { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+.pay-amount { background: #FCEBEB; border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+.pay-amount-label { font-size: 12px; color: #A32D2D; }
+.pay-amount-value { font-size: 22px; font-weight: 700; color: #A32D2D; }
+.detail-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f5f5f5; }
+.detail-row:last-of-type { border-bottom: none; }
+.detail-label { font-size: 11px; color: #999; margin-bottom: 2px; }
+.detail-value { font-size: 14px; font-weight: 600; color: #1a1a1a; }
+.copy-btn { background: #E6F1FB; color: #0C447C; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; margin-left: 12px; }
+.copy-btn.copied { background: #EAF3DE; color: #27500A; }
+.pay-divider { height: 1px; background: #f0f0f0; margin: 16px 0; }
+.btn-sent { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; background: #27500A; color: white; }
+.btn-close-pay { width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; background: #f5f5f5; color: #666; }
+.sent-confirmation { display: none; text-align: center; padding: 16px 0 8px; }
+.sent-confirmation .sent-icon { font-size: 40px; margin-bottom: 8px; }
+.sent-confirmation .sent-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.sent-confirmation .sent-sub { font-size: 13px; color: #666; line-height: 1.5; }
+
 .nav {
   position: fixed;
   bottom: 0; left: 0; right: 0;
@@ -385,6 +417,46 @@ body {
   </div>
 </div>
 
+<!-- BANK TRANSFER PANEL -->
+<div class="pay-overlay" id="pay-overlay">
+  <div class="pay-panel">
+    <div class="pay-handle"></div>
+    <div class="pay-title">Bank transfer 💷</div>
+    <div class="pay-sub">Use your banking app to send payment to the details below. Tap "I've sent it" once done and we'll confirm receipt.</div>
+    <div class="pay-amount">
+      <div class="pay-amount-label">Amount to pay</div>
+      <div class="pay-amount-value" id="panel-amount">£0.00</div>
+    </div>
+    <div class="detail-row">
+      <div><div class="detail-label">Account name</div><div class="detail-value" id="detail-name">Test Test</div></div>
+      <button class="copy-btn" id="copy-name">Copy</button>
+    </div>
+    <div class="detail-row">
+      <div><div class="detail-label">Sort code</div><div class="detail-value" id="detail-sort">01-23-45</div></div>
+      <button class="copy-btn" id="copy-sort">Copy</button>
+    </div>
+    <div class="detail-row">
+      <div><div class="detail-label">Account number</div><div class="detail-value" id="detail-acc">12345678</div></div>
+      <button class="copy-btn" id="copy-acc">Copy</button>
+    </div>
+    <div style="background:#FFF8E6;border-radius:8px;padding:10px 12px;margin-top:4px;font-size:12px;color:#633806;">
+      📝 <strong>Reference:</strong> Please use your home address as the payment reference so we can match it to your account.
+    </div>
+    <div class="pay-divider"></div>
+    <div id="pay-actions">
+      <button class="btn-sent" id="btn-sent">✅ I've sent the payment</button>
+      <button class="btn-close-pay" id="btn-cancel">Cancel</button>
+    </div>
+    <div class="sent-confirmation" id="sent-confirmation">
+      <div class="sent-icon">🙏</div>
+      <div class="sent-title">Thanks — payment noted!</div>
+      <div class="sent-sub">We'll check our account and confirm receipt shortly. Your balance will be updated once we've verified it.</div>
+      <br>
+      <button class="btn-close-pay" id="btn-close-confirm">Close</button>
+    </div>
+  </div>
+</div>
+
 <nav class="nav">
   <a href="home.html" class="nav-item active">
     <span class="nav-icon">🏠</span>
@@ -475,9 +547,21 @@ async function init() {
       document.getElementById('payment-sub').textContent = 'Last clean: ' + formatDate(c.last_clean);
       document.getElementById('payment-badge').textContent = 'Overdue';
       document.getElementById('payment-badge').className = 'badge badge-red';
-      document.getElementById('payment-btn-wrap').innerHTML =
-        '<button class="btn btn-overdue" style="margin-top:10px" onclick="window.location.href=\'payments.html\'">Pay now — £' + balance.toFixed(2) + '</button>' +
-        '<div class="overdue-text">Payment overdue — please pay to avoid service suspension</div>';
+      document.getElementById('panel-amount').textContent = '£' + balance.toFixed(2);
+      currentBalance = balance;
+
+      const payBtn = document.createElement('button');
+      payBtn.className = 'btn btn-overdue';
+      payBtn.style.marginTop = '10px';
+      payBtn.textContent = 'Pay now — £' + balance.toFixed(2);
+      payBtn.addEventListener('click', openPayPanel);
+
+      const overdueText = document.createElement('div');
+      overdueText.className = 'overdue-text';
+      overdueText.textContent = 'Payment overdue — please pay to avoid service suspension';
+
+      document.getElementById('payment-btn-wrap').appendChild(payBtn);
+      document.getElementById('payment-btn-wrap').appendChild(overdueText);
     } else {
       document.getElementById('payment-label').textContent = 'Payment status';
       document.getElementById('payment-title').textContent = 'All paid up ✅';
@@ -541,6 +625,54 @@ function closeReviewPopup() {
 }
 
 init();
+
+// BANK TRANSFER PANEL
+let currentBalance = 0;
+
+document.getElementById('btn-sent').addEventListener('click', iHavePaid);
+document.getElementById('btn-cancel').addEventListener('click', closePayPanel);
+document.getElementById('btn-close-confirm').addEventListener('click', closePayPanel);
+document.getElementById('copy-name').addEventListener('click', function() { copyDetail('detail-name', this); });
+document.getElementById('copy-sort').addEventListener('click', function() { copyDetail('detail-sort', this); });
+document.getElementById('copy-acc').addEventListener('click',  function() { copyDetail('detail-acc',  this); });
+document.getElementById('pay-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closePayPanel();
+});
+
+function openPayPanel() {
+  document.getElementById('pay-overlay').classList.add('show');
+  document.getElementById('pay-actions').style.display = 'block';
+  document.getElementById('sent-confirmation').style.display = 'none';
+}
+
+function closePayPanel() {
+  document.getElementById('pay-overlay').classList.remove('show');
+}
+
+async function iHavePaid() {
+  const btn = document.getElementById('btn-sent');
+  btn.textContent = 'Notifying...';
+  btn.disabled = true;
+  try {
+    await apiPost({ action: 'paymentNotification', amount: currentBalance });
+  } catch(e) {
+    console.error('Notification failed', e);
+  }
+  document.getElementById('pay-actions').style.display = 'none';
+  document.getElementById('sent-confirmation').style.display = 'block';
+}
+
+function copyDetail(id, btn) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    btn.textContent = 'Failed';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+  });
+}
 
 function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
 function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
