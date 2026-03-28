@@ -82,7 +82,8 @@ function clearCache() {
 async function apiPost(body) {
   const response = await fetch(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    mode: "cors",
+    headers: { "Content-Type": "text/plain" },
     body: JSON.stringify({ ...body, customer_id: CUSTOMER_ID })
   });
   if (!response.ok) throw new Error("Network error: " + response.status);
