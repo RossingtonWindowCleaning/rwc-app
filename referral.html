@@ -188,18 +188,20 @@ document.getElementById('btn-submit-referral').addEventListener('click', async f
   this.textContent = 'Submitting...';
   this.disabled = true;
 
+  let apiResult;
   try {
-    const result = await apiPost({ action: 'submitReferral', referred_address: address, referred_phone: phone });
-    console.log('Referral result:', JSON.stringify(result));
-    if (!result.success) {
-      alert('Something went wrong: ' + (result.error || 'Unknown error'));
-      this.textContent = 'Submit referral';
-      this.disabled = false;
-      return;
-    }
+    apiResult = await apiPost({ action: 'submitReferral', referred_address: address, referred_phone: phone });
+    console.log('Referral result:', JSON.stringify(apiResult));
   } catch(e) {
-    console.error('Referral submit failed', e);
-    alert('Connection error — please try again: ' + e.message);
+    console.error('apiPost failed:', e);
+    alert('Connection error on submit: ' + e.message);
+    this.textContent = 'Submit referral';
+    this.disabled = false;
+    return;
+  }
+
+  if (!apiResult.success) {
+    alert('Server error: ' + (apiResult.error || 'Unknown error'));
     this.textContent = 'Submit referral';
     this.disabled = false;
     return;
@@ -214,8 +216,12 @@ document.getElementById('btn-submit-referral').addEventListener('click', async f
     window.open('https://wa.me/?text=' + msg, '_blank');
   };
 
-  clearCache();
-  await init();
+  try {
+    clearCache();
+    await init();
+  } catch(e) {
+    console.error('Refresh failed:', e);
+  }
 });
 
 document.getElementById('btn-refer-another').addEventListener('click', function() {
