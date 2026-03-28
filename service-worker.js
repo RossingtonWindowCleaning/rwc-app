@@ -2,11 +2,11 @@
 // service-worker.js — Rossington Window Cleaning PWA
 // ============================================================
 // ⬆️ BUMP THE VERSION NUMBER EVERY TIME YOU DEPLOY CHANGES
-// e.g. rwc-v4 → rwc-v5 → rwc-v6
+// e.g. rwc-v15 → rwc-v16 → rwc-v17
 // This forces all devices to clear old cache and load fresh files
 // ============================================================
 
-const CACHE_NAME = 'rwc-v15';
+const CACHE_NAME = 'rwc-v16';
 const APP_SHELL = [
   './home.html',
   './payments.html',
@@ -39,10 +39,15 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
-  
-  // Always let API calls go directly to network — never cache or intercept
-  if (url.hostname === 'script.google.com') {
-    event.respondWith(fetch(event.request));
+
+  // ===== THE FIX =====
+  // Let ALL Google Apps Script calls bypass the service worker completely.
+  // By returning WITHOUT calling event.respondWith(), the browser handles
+  // the request natively — no redirect or CORS interference.
+  // The old code used event.respondWith(fetch(event.request)) which broke
+  // because Google Apps Script POST returns a 302 redirect that the
+  // service worker fetch() cannot follow properly.
+  if (url.hostname === 'script.google.com' || url.hostname.includes('googleapis.com')) {
     return;
   }
 
