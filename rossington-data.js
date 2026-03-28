@@ -1,5 +1,5 @@
 // ============================================================
-// rossington-data.js — v3
+// rossington-data.js — v3.1
 // Single API call loads all data upfront, cached in session
 // Every page reads from memory = instant tab switching
 // OneSignal push notification integration added
@@ -29,8 +29,22 @@ function initOneSignal() {
       serviceWorkerParam: { scope: "/rwc-app/push/onesignal/" }
     });
 
-    // Tag this device with the customer ID so we can send targeted notifications
-    OneSignal.login(CUSTOMER_ID);
+    // Only login after the user has granted permission
+    try {
+      const permission = await OneSignal.Notifications.permission;
+      if (permission) {
+        await OneSignal.login(CUSTOMER_ID);
+      }
+
+      // Listen for future permission changes
+      OneSignal.Notifications.addEventListener('permissionChange', async function(granted) {
+        if (granted) {
+          await OneSignal.login(CUSTOMER_ID);
+        }
+      });
+    } catch(e) {
+      console.log('OneSignal setup note:', e);
+    }
   });
 }
 
