@@ -6,7 +6,7 @@
 // This forces all devices to clear old cache and load fresh files
 // ============================================================
 
-const CACHE_NAME = 'rwc-v10';
+const CACHE_NAME = 'rwc-v11';
 const APP_SHELL = [
   './home.html',
   './payments.html',

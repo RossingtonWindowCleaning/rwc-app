@@ -83,8 +83,7 @@ async function apiPost(body) {
   const response = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, customer_id: CUSTOMER_ID }),
-    redirect: "follow"
+    body: JSON.stringify({ ...body, customer_id: CUSTOMER_ID })
   });
   if (!response.ok) throw new Error("Network error: " + response.status);
   return response.json();
