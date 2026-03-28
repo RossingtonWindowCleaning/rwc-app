@@ -80,10 +80,13 @@ function clearCache() {
 // POST HELPER — for submitting feedback, payments etc
 // ============================================================
 async function apiPost(body) {
+  // Google Apps Script redirects POST requests — we must follow
+  // the redirect manually to avoid losing the request body
   const response = await fetch(API_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...body, customer_id: CUSTOMER_ID })
+    headers: { "Content-Type": "text/plain" }, // text/plain avoids CORS preflight
+    body: JSON.stringify({ ...body, customer_id: CUSTOMER_ID }),
+    redirect: "follow"
   });
   if (!response.ok) throw new Error("Network error: " + response.status);
   return response.json();
