@@ -189,9 +189,20 @@ document.getElementById('btn-submit-referral').addEventListener('click', async f
   this.disabled = true;
 
   try {
-    await apiPost({ action: 'submitReferral', referred_address: address, referred_phone: phone });
+    const result = await apiPost({ action: 'submitReferral', referred_address: address, referred_phone: phone });
+    console.log('Referral result:', JSON.stringify(result));
+    if (!result.success) {
+      alert('Something went wrong: ' + (result.error || 'Unknown error'));
+      this.textContent = 'Submit referral';
+      this.disabled = false;
+      return;
+    }
   } catch(e) {
     console.error('Referral submit failed', e);
+    alert('Connection error — please try again: ' + e.message);
+    this.textContent = 'Submit referral';
+    this.disabled = false;
+    return;
   }
 
   document.getElementById('refer-form-card').style.display = 'none';
