@@ -1,12 +1,10 @@
 // ============================================================
 // service-worker.js — Rossington Window Cleaning PWA
 // ============================================================
-// Combined PWA + OneSignal service worker
+// ⬆️ BUMP THE VERSION NUMBER EVERY TIME YOU DEPLOY CHANGES
 // ============================================================
 
-importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
-
-const CACHE_NAME = 'rwc-v18';
+const CACHE_NAME = 'rwc-v19';
 const APP_SHELL = [
   './home.html',
   './payments.html',
