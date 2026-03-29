@@ -1,5 +1,64 @@
-importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
-const CACHE_NAME = 'rwc-v20';
+// ============================================================
+// service-worker.js — Rossington Window Cleaning PWA
+// ============================================================
+// v21 — Firebase Cloud Messaging (replaces OneSignal)
+// BUMP THE VERSION NUMBER EVERY TIME YOU DEPLOY CHANGES
+// ============================================================
+
+// Firebase Messaging — import compat libraries for service worker
+importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
+
+// Initialize Firebase in the service worker
+firebase.initializeApp({
+  apiKey: "AIzaSyA9NfQXYIRGdULIEv5jYaLLJtIusWc_j7w",
+  authDomain: "rossington-wc.firebaseapp.com",
+  projectId: "rossington-wc",
+  storageBucket: "rossington-wc.firebasestorage.app",
+  messagingSenderId: "228463613008",
+  appId: "1:228463613008:web:2eebd32515b37172efad55"
+});
+
+// Handle background push notifications
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage(function(payload) {
+  console.log('[SW] Background message received:', payload);
+
+  const title = payload.notification ? payload.notification.title : (payload.data ? payload.data.title : 'Rossington Window Cleaning');
+  const options = {
+    body: payload.notification ? payload.notification.body : (payload.data ? payload.data.body : ''),
+    icon: './icon-192.png',
+    badge: './icon-192.png'
+  };
+
+  return self.registration.showNotification(title, options);
+});
+
+// Handle notification click — open the app
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      // If app is already open, focus it
+      for (var i = 0; i < clientList.length; i++) {
+        if (clientList[i].url.includes('home.html') && 'focus' in clientList[i]) {
+          return clientList[i].focus();
+        }
+      }
+      // Otherwise open the app
+      if (clients.openWindow) {
+        return clients.openWindow('./home.html');
+      }
+    })
+  );
+});
+
+// ============================================================
+// PWA Caching
+// ============================================================
+
+const CACHE_NAME = 'rwc-v21';
 const APP_SHELL = [
   './home.html',
   './payments.html',
@@ -33,9 +92,12 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
+  // Let API calls and Firebase calls bypass the service worker completely
   if (url.hostname === 'script.google.com' ||
       url.hostname.includes('googleapis.com') ||
-      url.hostname.includes('onesignal.com')) {
+      url.hostname.includes('gstatic.com') ||
+      url.hostname.includes('firebaseinstallations') ||
+      url.hostname.includes('fcmregistrations')) {
     return;
   }
 
