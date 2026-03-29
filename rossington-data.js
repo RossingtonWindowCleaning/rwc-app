@@ -1,5 +1,5 @@
 // ============================================================
-// rossington-data.js — v3.2
+// rossington-data.js — v3.3
 // Single API call loads all data upfront, cached in session
 // Every page reads from memory = instant tab switching
 // OneSignal push notification integration added
@@ -25,7 +25,7 @@ function initOneSignal() {
   OneSignalDeferred.push(async function(OneSignal) {
     await OneSignal.init({
       appId: "393033c6-1fca-4e52-9d35-cde42963ffff",
-      serviceWorkerPath: "/rwc-app/OneSignalSDKWorker.js",
+      serviceWorkerPath: "OneSignalSDKWorker.js",
       serviceWorkerParam: { scope: "/rwc-app/" }
     });
 

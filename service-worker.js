@@ -1,12 +1,12 @@
 // ============================================================
 // service-worker.js — Rossington Window Cleaning PWA
 // ============================================================
-// ⬆️ BUMP THE VERSION NUMBER EVERY TIME YOU DEPLOY CHANGES
-// e.g. rwc-v16 → rwc-v17 → rwc-v18
-// This forces all devices to clear old cache and load fresh files
+// Combined PWA + OneSignal service worker
 // ============================================================
 
-const CACHE_NAME = 'rwc-v17';
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+
+const CACHE_NAME = 'rwc-v18';
 const APP_SHELL = [
   './home.html',
   './payments.html',
@@ -40,7 +40,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Let ALL Google Apps Script and OneSignal calls bypass the service worker
+  // Let API and OneSignal calls bypass the service worker
   if (url.hostname === 'script.google.com' ||
       url.hostname.includes('googleapis.com') ||
       url.hostname.includes('onesignal.com')) {
