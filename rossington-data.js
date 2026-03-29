@@ -1,13 +1,25 @@
 // ============================================================
-// rossington-data.js — v3.5
+// rossington-data.js — v4
 // Single API call loads all data upfront, cached in session
 // Every page reads from memory = instant tab switching
-// OneSignal push notification integration added
+// Firebase Cloud Messaging push notifications (replaces OneSignal)
 // ============================================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
 const CACHE_KEY = "rwc_customer_data";
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Firebase config
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA9NfQXYIRGdULIEv5jYaLLJtIusWc_j7w",
+  authDomain: "rossington-wc.firebaseapp.com",
+  projectId: "rossington-wc",
+  storageBucket: "rossington-wc.firebasestorage.app",
+  messagingSenderId: "228463613008",
+  appId: "1:228463613008:web:2eebd32515b37172efad55"
+};
+
+const FCM_VAPID_KEY = "BAgoot4I5JbVwZMquWu1Hty6UZrb1S6Gac_tNv-LTAm5Rwl_MNRm_MFNbxblja4VHWDsq-UNnRJKjYb7Epz_kAA";
 
 // Read customer ID from URL
 const CUSTOMER_ID = getCustomerIdFromURL() || "1";
@@ -18,38 +30,89 @@ function getCustomerIdFromURL() {
 }
 
 // ============================================================
-// ONESIGNAL SETUP
+// FIREBASE CLOUD MESSAGING SETUP
 // ============================================================
-function initOneSignal() {
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "393033c6-1fca-4e52-9d35-cde42963ffff",
-      serviceWorkerPath: "service-worker.js",
-      serviceWorkerParam: { scope: "/rwc-app/" }
+async function initFirebasePush() {
+  try {
+    // Wait for Firebase SDKs to load
+    if (typeof firebase === 'undefined') {
+      console.log('Firebase SDK not loaded yet, skipping push init');
+      return;
+    }
+
+    // Initialize Firebase (only once)
+    if (!firebase.apps.length) {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    }
+
+    const messaging = firebase.messaging();
+
+    // Get the service worker registration (our existing PWA service worker)
+    const registration = await navigator.serviceWorker.ready;
+
+    // Check if we already have permission
+    const permission = Notification.permission;
+
+    if (permission === 'granted') {
+      // Already have permission — get token and save it
+      await getAndSaveToken(messaging, registration);
+    } else if (permission === 'default') {
+      // Haven't asked yet — request permission
+      const result = await Notification.requestPermission();
+      if (result === 'granted') {
+        await getAndSaveToken(messaging, registration);
+      }
+    }
+    // If 'denied', do nothing — user said no
+
+    // Handle foreground messages (when app is open)
+    messaging.onMessage(function(payload) {
+      console.log('Foreground message received:', payload);
+      // Show a notification even when app is in foreground
+      const title = payload.notification ? payload.notification.title : 'Rossington Window Cleaning';
+      const body = payload.notification ? payload.notification.body : '';
+      if (registration.showNotification) {
+        registration.showNotification(title, {
+          body: body,
+          icon: 'icon-192.png',
+          badge: 'icon-192.png'
+        });
+      }
     });
 
-    // Only login after the user has granted permission
-    try {
-      const permission = OneSignal.Notifications.permission;
-      if (permission) {
-        await OneSignal.login(CUSTOMER_ID);
-      }
-
-      // Listen for future permission changes
-      OneSignal.Notifications.addEventListener('permissionChange', async function(granted) {
-        if (granted) {
-          await OneSignal.login(CUSTOMER_ID);
-        }
-      });
-    } catch(e) {
-      console.log('OneSignal setup note:', e);
-    }
-  });
+  } catch (e) {
+    console.log('Firebase push setup note:', e);
+  }
 }
 
-// Run OneSignal init on every page
-initOneSignal();
+async function getAndSaveToken(messaging, registration) {
+  try {
+    const token = await messaging.getToken({
+      vapidKey: FCM_VAPID_KEY,
+      serviceWorkerRegistration: registration
+    });
+
+    if (token) {
+      console.log('FCM token obtained');
+      // Save token to Google Sheet via Apps Script
+      // Only save if it's different from what we saved before
+      const savedToken = localStorage.getItem('fcm_token_' + CUSTOMER_ID);
+      if (savedToken !== token) {
+        await apiPost({
+          action: 'saveFcmToken',
+          fcm_token: token
+        });
+        localStorage.setItem('fcm_token_' + CUSTOMER_ID, token);
+        console.log('FCM token saved to server');
+      }
+    }
+  } catch (e) {
+    console.log('FCM token error:', e);
+  }
+}
+
+// Run Firebase push init on every page load
+initFirebasePush();
 
 // ============================================================
 // MAIN — loads all data in one call, caches it
