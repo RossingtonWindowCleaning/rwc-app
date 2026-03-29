@@ -1,10 +1,11 @@
+// OneSignal MUST be imported first, before any other code
+importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
+
 // ============================================================
-// service-worker.js — Rossington Window Cleaning PWA
-// ============================================================
-// ⬆️ BUMP THE VERSION NUMBER EVERY TIME YOU DEPLOY CHANGES
+// PWA Caching — Rossington Window Cleaning
 // ============================================================
 
-const CACHE_NAME = 'rwc-v19';
+const CACHE_NAME = 'rwc-v20';
 const APP_SHELL = [
   './home.html',
   './payments.html',
