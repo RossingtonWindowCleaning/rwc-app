@@ -1,10 +1,4 @@
-// OneSignal MUST be imported first, before any other code
 importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
-
-// ============================================================
-// PWA Caching — Rossington Window Cleaning
-// ============================================================
-
 const CACHE_NAME = 'rwc-v20';
 const APP_SHELL = [
   './home.html',
@@ -39,7 +33,6 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Let API and OneSignal calls bypass the service worker
   if (url.hostname === 'script.google.com' ||
       url.hostname.includes('googleapis.com') ||
       url.hostname.includes('onesignal.com')) {
