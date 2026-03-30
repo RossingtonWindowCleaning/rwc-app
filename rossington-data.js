@@ -1,5 +1,5 @@
 // ============================================================
-// rossington-data.js — v4.1
+// rossington-data.js — v4.2
 // Single API call loads all data upfront, cached in session
 // Every page reads from memory = instant tab switching
 // Firebase Cloud Messaging push notifications
@@ -30,77 +30,45 @@ function getCustomerIdFromURL() {
 // ============================================================
 // FIREBASE CLOUD MESSAGING SETUP
 // ============================================================
+var _fcmMessaging = null;
+var _fcmRegistration = null;
+
 async function initFirebasePush() {
   try {
-    if (typeof firebase === 'undefined') {
-      console.log('Firebase SDK not loaded yet');
-      return;
-    }
-
-    if (!('serviceWorker' in navigator)) {
-      console.log('Service workers not supported');
-      return;
-    }
-
-    if (!('Notification' in window)) {
-      console.log('Notifications not supported');
-      return;
-    }
+    if (typeof firebase === 'undefined') return;
+    if (!('serviceWorker' in navigator)) return;
+    if (!('Notification' in window)) return;
 
     if (!firebase.apps.length) {
       firebase.initializeApp(FIREBASE_CONFIG);
     }
 
-    var messaging = firebase.messaging();
+    _fcmMessaging = firebase.messaging();
 
-    var registration;
-    try {
-      registration = await navigator.serviceWorker.getRegistration();
-      if (!registration) {
-        registration = await navigator.serviceWorker.register('service-worker.js');
-        console.log('SW registered by rossington-data.js');
-      }
-      if (registration.installing || registration.waiting) {
-        await new Promise(function(resolve) {
-          var sw = registration.installing || registration.waiting;
-          sw.addEventListener('statechange', function() {
-            if (sw.state === 'activated') {
-              resolve();
-            }
-          });
-          if (registration.active) {
-            resolve();
-          }
+    var registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) {
+      registration = await navigator.serviceWorker.register('service-worker.js');
+    }
+    if (registration.installing || registration.waiting) {
+      await new Promise(function(resolve) {
+        var sw = registration.installing || registration.waiting;
+        sw.addEventListener('statechange', function() {
+          if (sw.state === 'activated') resolve();
         });
-      }
-    } catch (e) {
-      console.log('SW registration issue:', e);
-      return;
+        if (registration.active) resolve();
+      });
+    }
+    _fcmRegistration = registration;
+
+    if (Notification.permission === 'granted') {
+      await getAndSaveToken(_fcmMessaging, _fcmRegistration);
     }
 
-    console.log('SW active, checking notification permission...');
-    var permission = Notification.permission;
-    console.log('Current permission:', permission);
-
-    if (permission === 'granted') {
-      await getAndSaveToken(messaging, registration);
-    } else if (permission === 'default') {
-      console.log('Requesting notification permission...');
-      var result = await Notification.requestPermission();
-      console.log('Permission result:', result);
-      if (result === 'granted') {
-        await getAndSaveToken(messaging, registration);
-      }
-    } else {
-      console.log('Notifications blocked by user');
-    }
-
-    messaging.onMessage(function(payload) {
-      console.log('Foreground message received:', payload);
+    _fcmMessaging.onMessage(function(payload) {
       var title = payload.notification ? payload.notification.title : 'Rossington Window Cleaning';
       var body = payload.notification ? payload.notification.body : '';
-      if (registration.showNotification) {
-        registration.showNotification(title, {
+      if (_fcmRegistration && _fcmRegistration.showNotification) {
+        _fcmRegistration.showNotification(title, {
           body: body,
           icon: 'icon-192.png',
           badge: 'icon-192.png'
@@ -110,6 +78,25 @@ async function initFirebasePush() {
 
   } catch (e) {
     console.log('Firebase push setup error:', e);
+  }
+}
+
+async function requestPushPermission() {
+  try {
+    if (!_fcmMessaging || !_fcmRegistration) {
+      await initFirebasePush();
+    }
+    if (!_fcmMessaging || !_fcmRegistration) return false;
+
+    var result = await Notification.requestPermission();
+    if (result === 'granted') {
+      await getAndSaveToken(_fcmMessaging, _fcmRegistration);
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.log('Push permission error:', e);
+    return false;
   }
 }
 
@@ -130,15 +117,24 @@ async function getAndSaveToken(messaging, registration) {
         });
         localStorage.setItem('fcm_token_' + CUSTOMER_ID, token);
         console.log('FCM token saved to server');
-      } else {
-        console.log('FCM token unchanged, skipping save');
       }
-    } else {
-      console.log('No FCM token received');
     }
   } catch (e) {
     console.log('FCM token error:', e);
   }
+}
+
+function needsPushPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission !== 'default') return false;
+  if (localStorage.getItem('push_dismissed_' + CUSTOMER_ID)) return false;
+  return true;
+}
+
+function dismissPushPrompt() {
+  localStorage.setItem('push_dismissed_' + CUSTOMER_ID, '1');
+  var card = document.getElementById('push-prompt-card');
+  if (card) card.style.display = 'none';
 }
 
 initFirebasePush();
