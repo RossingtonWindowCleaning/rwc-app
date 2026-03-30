@@ -1,15 +1,14 @@
 // ============================================================
-// rossington-data.js — v4
+// rossington-data.js — v4.1
 // Single API call loads all data upfront, cached in session
 // Every page reads from memory = instant tab switching
-// Firebase Cloud Messaging push notifications (replaces OneSignal)
+// Firebase Cloud Messaging push notifications
 // ============================================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
 const CACHE_KEY = "rwc_customer_data";
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 5 * 60 * 1000;
 
-// Firebase config
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyA9NfQXYIRGdULIEv5jYaLLJtIusWc_j7w",
   authDomain: "rossington-wc.firebaseapp.com",
@@ -21,7 +20,6 @@ const FIREBASE_CONFIG = {
 
 const FCM_VAPID_KEY = "BAgoot4I5JbVwZMquWu1Hty6UZrb1S6Gac_tNv-LTAm5Rwl_MNRm_MFNbxblja4VHWDsq-UNnRJKjYb7Epz_kAA";
 
-// Read customer ID from URL
 const CUSTOMER_ID = getCustomerIdFromURL() || "1";
 
 function getCustomerIdFromURL() {
@@ -34,43 +32,73 @@ function getCustomerIdFromURL() {
 // ============================================================
 async function initFirebasePush() {
   try {
-    // Wait for Firebase SDKs to load
     if (typeof firebase === 'undefined') {
-      console.log('Firebase SDK not loaded yet, skipping push init');
+      console.log('Firebase SDK not loaded yet');
       return;
     }
 
-    // Initialize Firebase (only once)
+    if (!('serviceWorker' in navigator)) {
+      console.log('Service workers not supported');
+      return;
+    }
+
+    if (!('Notification' in window)) {
+      console.log('Notifications not supported');
+      return;
+    }
+
     if (!firebase.apps.length) {
       firebase.initializeApp(FIREBASE_CONFIG);
     }
 
-    const messaging = firebase.messaging();
+    var messaging = firebase.messaging();
 
-    // Get the service worker registration (our existing PWA service worker)
-    const registration = await navigator.serviceWorker.ready;
+    var registration;
+    try {
+      registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        registration = await navigator.serviceWorker.register('service-worker.js');
+        console.log('SW registered by rossington-data.js');
+      }
+      if (registration.installing || registration.waiting) {
+        await new Promise(function(resolve) {
+          var sw = registration.installing || registration.waiting;
+          sw.addEventListener('statechange', function() {
+            if (sw.state === 'activated') {
+              resolve();
+            }
+          });
+          if (registration.active) {
+            resolve();
+          }
+        });
+      }
+    } catch (e) {
+      console.log('SW registration issue:', e);
+      return;
+    }
 
-    // Check if we already have permission
-    const permission = Notification.permission;
+    console.log('SW active, checking notification permission...');
+    var permission = Notification.permission;
+    console.log('Current permission:', permission);
 
     if (permission === 'granted') {
-      // Already have permission — get token and save it
       await getAndSaveToken(messaging, registration);
     } else if (permission === 'default') {
-      // Haven't asked yet — request permission
-      const result = await Notification.requestPermission();
+      console.log('Requesting notification permission...');
+      var result = await Notification.requestPermission();
+      console.log('Permission result:', result);
       if (result === 'granted') {
         await getAndSaveToken(messaging, registration);
       }
+    } else {
+      console.log('Notifications blocked by user');
     }
-    // If 'denied', do nothing — user said no
 
-    // Handle foreground messages (when app is open)
     messaging.onMessage(function(payload) {
       console.log('Foreground message received:', payload);
-      // Show a notification even when app is in foreground
-      const title = payload.notification ? payload.notification.title : 'Rossington Window Cleaning';
-      const body = payload.notification ? payload.notification.body : '';
+      var title = payload.notification ? payload.notification.title : 'Rossington Window Cleaning';
+      var body = payload.notification ? payload.notification.body : '';
       if (registration.showNotification) {
         registration.showNotification(title, {
           body: body,
@@ -81,22 +109,20 @@ async function initFirebasePush() {
     });
 
   } catch (e) {
-    console.log('Firebase push setup note:', e);
+    console.log('Firebase push setup error:', e);
   }
 }
 
 async function getAndSaveToken(messaging, registration) {
   try {
-    const token = await messaging.getToken({
+    var token = await messaging.getToken({
       vapidKey: FCM_VAPID_KEY,
       serviceWorkerRegistration: registration
     });
 
     if (token) {
       console.log('FCM token obtained');
-      // Save token to Google Sheet via Apps Script
-      // Only save if it's different from what we saved before
-      const savedToken = localStorage.getItem('fcm_token_' + CUSTOMER_ID);
+      var savedToken = localStorage.getItem('fcm_token_' + CUSTOMER_ID);
       if (savedToken !== token) {
         await apiPost({
           action: 'saveFcmToken',
@@ -104,32 +130,31 @@ async function getAndSaveToken(messaging, registration) {
         });
         localStorage.setItem('fcm_token_' + CUSTOMER_ID, token);
         console.log('FCM token saved to server');
+      } else {
+        console.log('FCM token unchanged, skipping save');
       }
+    } else {
+      console.log('No FCM token received');
     }
   } catch (e) {
     console.log('FCM token error:', e);
   }
 }
 
-// Run Firebase push init on every page load
 initFirebasePush();
 
 // ============================================================
 // MAIN — loads all data in one call, caches it
-// Call this on every page in init()
-// Returns the full cached data object
 // ============================================================
-async function loadAllData(forceRefresh = false) {
-  // Check cache first
+async function loadAllData(forceRefresh) {
   if (!forceRefresh) {
-    const cached = getCache();
+    var cached = getCache();
     if (cached) return cached;
   }
 
-  // Single API call — gets everything at once
-  const response = await fetch(`${API_URL}?action=getAll&customer_id=${CUSTOMER_ID}`);
+  var response = await fetch(API_URL + '?action=getAll&customer_id=' + CUSTOMER_ID);
   if (!response.ok) throw new Error("Network error: " + response.status);
-  const data = await response.json();
+  var data = await response.json();
 
   if (data.success) {
     setCache(data);
@@ -142,23 +167,20 @@ async function loadAllData(forceRefresh = false) {
 // CACHE HELPERS
 // ============================================================
 function setCache(data) {
-  const entry = {
+  var entry = {
     timestamp: Date.now(),
     data: data
   };
   try {
     sessionStorage.setItem(CACHE_KEY + "_" + CUSTOMER_ID, JSON.stringify(entry));
-  } catch(e) {
-    // sessionStorage not available — no caching, just live calls
-  }
+  } catch(e) {}
 }
 
 function getCache() {
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY + "_" + CUSTOMER_ID);
+    var raw = sessionStorage.getItem(CACHE_KEY + "_" + CUSTOMER_ID);
     if (!raw) return null;
-    const entry = JSON.parse(raw);
-    // Check if cache is still fresh
+    var entry = JSON.parse(raw);
     if (Date.now() - entry.timestamp > CACHE_TTL) return null;
     return entry.data;
   } catch(e) {
@@ -166,8 +188,6 @@ function getCache() {
   }
 }
 
-// Call this after owner updates job status, payment etc
-// so the next page load gets fresh data
 function clearCache() {
   try {
     sessionStorage.removeItem(CACHE_KEY + "_" + CUSTOMER_ID);
@@ -175,10 +195,10 @@ function clearCache() {
 }
 
 // ============================================================
-// POST HELPER — for submitting feedback, payments etc
+// POST HELPER
 // ============================================================
 async function apiPost(body) {
-  const response = await fetch(API_URL, {
+  var response = await fetch(API_URL, {
     method: "POST",
     mode: "cors",
     headers: { "Content-Type": "text/plain" },
@@ -193,13 +213,13 @@ async function apiPost(body) {
 // ============================================================
 function formatDate(dateString) {
   if (!dateString) return null;
-  const date = new Date(dateString);
+  var date = new Date(dateString);
   if (isNaN(date.getTime())) return null;
-  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  const day = date.getDate();
-  const suffix = [11,12,13].includes(day) ? 'th' : (['st','nd','rd'][(day % 10) - 1] || 'th');
-  return `${days[date.getDay()]} ${day}${suffix} ${months[date.getMonth()]}`;
+  var days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var day = date.getDate();
+  var suffix = [11,12,13].includes(day) ? 'th' : (['st','nd','rd'][(day % 10) - 1] || 'th');
+  return days[date.getDay()] + ' ' + day + suffix + ' ' + months[date.getMonth()];
 }
 
 function getPaymentStatusLabel(status) {
@@ -212,7 +232,7 @@ function getPaymentStatusLabel(status) {
 }
 
 function getTrackerStatusLabel(status) {
-  const map = {
+  var map = {
     'not_scheduled': { label: 'No clean today', emoji: '📅' },
     'none':          { label: 'No clean today', emoji: '📅' },
     'on_the_way':    { label: "We're on our way!", emoji: '🚐' },
