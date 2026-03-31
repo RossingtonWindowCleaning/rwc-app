@@ -1,7 +1,7 @@
 // ============================================================
 // service-worker.js — Rossington Window Cleaning PWA
 // ============================================================
-// v21 — Firebase Cloud Messaging (replaces OneSignal)
+// v22 — Bumped to force cache refresh on all devices
 // BUMP THE VERSION NUMBER EVERY TIME YOU DEPLOY CHANGES
 // ============================================================
 
@@ -40,13 +40,11 @@ self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
-      // If app is already open, focus it
       for (var i = 0; i < clientList.length; i++) {
         if (clientList[i].url.includes('home.html') && 'focus' in clientList[i]) {
           return clientList[i].focus();
         }
       }
-      // Otherwise open the app
       if (clients.openWindow) {
         return clients.openWindow('./home.html');
       }
@@ -58,7 +56,7 @@ self.addEventListener('notificationclick', function(event) {
 // PWA Caching
 // ============================================================
 
-const CACHE_NAME = 'rwc-v21';
+const CACHE_NAME = 'rwc-v22';
 const APP_SHELL = [
   './home.html',
   './payments.html',
