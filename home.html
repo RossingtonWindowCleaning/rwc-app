@@ -496,6 +496,34 @@ body {
 <script>
 const GOOGLE_REVIEW_URL = 'https://search.google.com/local/writereview?placeid=ChIJv8LTY3UsV0gRZElT0r2HKFo';
 
+// ============================================================
+// SHOW PUSH PROMPT IMMEDIATELY — independent of data loading
+// Runs straight away so new visitors always see the card
+// even if the API call is slow or fails
+// ============================================================
+if (needsPushPrompt()) {
+  document.getElementById('push-prompt-card').style.display = 'block';
+}
+
+document.getElementById('push-prompt-btn').addEventListener('click', async function() {
+  this.textContent = 'Enabling...';
+  this.disabled = true;
+  var granted = await requestPushPermission();
+  if (granted) {
+    document.getElementById('push-prompt-card').style.display = 'none';
+  } else {
+    this.textContent = 'Enable notifications';
+    this.disabled = false;
+  }
+});
+
+document.getElementById('push-prompt-dismiss').addEventListener('click', function() {
+  dismissPushPrompt();
+});
+
+// ============================================================
+// LOAD PAGE DATA
+// ============================================================
 async function init() {
   showLoader();
   try {
@@ -579,6 +607,7 @@ async function init() {
 
   } catch (err) {
     console.error('Failed to load data:', err);
+    hideLoader();
   }
 }
 
@@ -628,26 +657,6 @@ function closeReviewPopup() {
 }
 
 init();
-
-if (needsPushPrompt()) {
-  document.getElementById('push-prompt-card').style.display = 'block';
-}
-
-document.getElementById('push-prompt-btn').addEventListener('click', async function() {
-  this.textContent = 'Enabling...';
-  this.disabled = true;
-  var granted = await requestPushPermission();
-  if (granted) {
-    document.getElementById('push-prompt-card').style.display = 'none';
-  } else {
-    this.textContent = 'Enable notifications';
-    this.disabled = false;
-  }
-});
-
-document.getElementById('push-prompt-dismiss').addEventListener('click', function() {
-  dismissPushPrompt();
-});
 
 let currentBalance = 0;
 
