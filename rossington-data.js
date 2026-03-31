@@ -1,8 +1,5 @@
 // ============================================================
-// rossington-data.js — v4.2
-// Single API call loads all data upfront, cached in session
-// Every page reads from memory = instant tab switching
-// Firebase Cloud Messaging push notifications
+// rossington-data.js — v4.3
 // ============================================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
@@ -28,16 +25,15 @@ function getCustomerIdFromURL() {
 }
 
 // ============================================================
-// FIREBASE CLOUD MESSAGING SETUP
+// FIREBASE CLOUD MESSAGING
 // ============================================================
 var _fcmMessaging = null;
 var _fcmRegistration = null;
 
 async function initFirebasePush() {
   try {
-    if (typeof firebase === 'undefined') return;
-    if (!('serviceWorker' in navigator)) return;
-    if (!('Notification' in window)) return;
+    if (typeof firebase === 'undefined') { console.log('FCM: firebase not loaded'); return; }
+    if (!('serviceWorker' in navigator)) { console.log('FCM: no SW support'); return; }
 
     if (!firebase.apps.length) {
       firebase.initializeApp(FIREBASE_CONFIG);
@@ -59,8 +55,9 @@ async function initFirebasePush() {
       });
     }
     _fcmRegistration = registration;
+    console.log('FCM: ready');
 
-    if (Notification.permission === 'granted') {
+    if ('Notification' in window && Notification.permission === 'granted') {
       await getAndSaveToken(_fcmMessaging, _fcmRegistration);
     }
 
@@ -68,34 +65,41 @@ async function initFirebasePush() {
       var title = payload.notification ? payload.notification.title : 'Rossington Window Cleaning';
       var body = payload.notification ? payload.notification.body : '';
       if (_fcmRegistration && _fcmRegistration.showNotification) {
-        _fcmRegistration.showNotification(title, {
-          body: body,
-          icon: 'icon-192.png',
-          badge: 'icon-192.png'
-        });
+        _fcmRegistration.showNotification(title, { body: body, icon: 'icon-192.png', badge: 'icon-192.png' });
       }
     });
 
   } catch (e) {
-    console.log('Firebase push setup error:', e);
+    console.log('FCM init error:', e);
   }
 }
 
 async function requestPushPermission() {
   try {
+    if (!('Notification' in window)) {
+      console.log('FCM: Notification API not available');
+      return false;
+    }
+
     if (!_fcmMessaging || !_fcmRegistration) {
       await initFirebasePush();
     }
-    if (!_fcmMessaging || !_fcmRegistration) return false;
+    if (!_fcmMessaging || !_fcmRegistration) {
+      console.log('FCM: not ready after init');
+      return false;
+    }
 
+    console.log('FCM: requesting permission...');
     var result = await Notification.requestPermission();
+    console.log('FCM: permission result:', result);
+
     if (result === 'granted') {
       await getAndSaveToken(_fcmMessaging, _fcmRegistration);
       return true;
     }
     return false;
   } catch (e) {
-    console.log('Push permission error:', e);
+    console.log('FCM permission error:', e);
     return false;
   }
 }
@@ -111,10 +115,7 @@ async function getAndSaveToken(messaging, registration) {
       console.log('FCM token obtained');
       var savedToken = localStorage.getItem('fcm_token_' + CUSTOMER_ID);
       if (savedToken !== token) {
-        await apiPost({
-          action: 'saveFcmToken',
-          fcm_token: token
-        });
+        await apiPost({ action: 'saveFcmToken', fcm_token: token });
         localStorage.setItem('fcm_token_' + CUSTOMER_ID, token);
         console.log('FCM token saved to server');
       }
@@ -124,10 +125,9 @@ async function getAndSaveToken(messaging, registration) {
   }
 }
 
-function needsPushPermission() {
-  if (!('Notification' in window)) return false;
-  if (Notification.permission !== 'default') return false;
+function needsPushPrompt() {
   if (localStorage.getItem('push_dismissed_' + CUSTOMER_ID)) return false;
+  if (localStorage.getItem('fcm_token_' + CUSTOMER_ID)) return false;
   return true;
 }
 
@@ -140,7 +140,7 @@ function dismissPushPrompt() {
 initFirebasePush();
 
 // ============================================================
-// MAIN — loads all data in one call, caches it
+// DATA LOADING
 // ============================================================
 async function loadAllData(forceRefresh) {
   if (!forceRefresh) {
@@ -152,23 +152,13 @@ async function loadAllData(forceRefresh) {
   if (!response.ok) throw new Error("Network error: " + response.status);
   var data = await response.json();
 
-  if (data.success) {
-    setCache(data);
-  }
-
+  if (data.success) { setCache(data); }
   return data;
 }
 
-// ============================================================
-// CACHE HELPERS
-// ============================================================
 function setCache(data) {
-  var entry = {
-    timestamp: Date.now(),
-    data: data
-  };
   try {
-    sessionStorage.setItem(CACHE_KEY + "_" + CUSTOMER_ID, JSON.stringify(entry));
+    sessionStorage.setItem(CACHE_KEY + "_" + CUSTOMER_ID, JSON.stringify({ timestamp: Date.now(), data: data }));
   } catch(e) {}
 }
 
@@ -179,20 +169,13 @@ function getCache() {
     var entry = JSON.parse(raw);
     if (Date.now() - entry.timestamp > CACHE_TTL) return null;
     return entry.data;
-  } catch(e) {
-    return null;
-  }
+  } catch(e) { return null; }
 }
 
 function clearCache() {
-  try {
-    sessionStorage.removeItem(CACHE_KEY + "_" + CUSTOMER_ID);
-  } catch(e) {}
+  try { sessionStorage.removeItem(CACHE_KEY + "_" + CUSTOMER_ID); } catch(e) {}
 }
 
-// ============================================================
-// POST HELPER
-// ============================================================
 async function apiPost(body) {
   var response = await fetch(API_URL, {
     method: "POST",

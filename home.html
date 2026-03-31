@@ -128,7 +128,6 @@ body {
   margin-bottom: 8px;
 }
 
-/* PUSH NOTIFICATION PROMPT */
 .push-prompt-card {
   background: white;
   border-radius: 12px;
@@ -143,7 +142,6 @@ body {
 .push-prompt-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; background: #0C447C; color: white; margin-bottom: 8px; }
 .push-prompt-dismiss { background: none; border: none; font-size: 12px; color: #999; cursor: pointer; }
 
-/* SURVEY CARD */
 .survey-card {
   background: white;
   border-radius: 12px;
@@ -201,7 +199,6 @@ body {
   font-weight: 600;
 }
 
-/* REVIEW POPUP OVERLAY */
 .overlay {
   display: none;
   position: fixed;
@@ -242,7 +239,6 @@ body {
 .popup-btn-primary { background: #0C447C; color: white; }
 .popup-btn-secondary { background: #f5f5f5; color: #666; }
 
-/* BANK TRANSFER PANEL */
 .pay-overlay {
   display: none;
   position: fixed;
@@ -296,7 +292,6 @@ body {
 .nav-item.active { color: #0C447C; }
 .nav-icon { font-size: 20px; }
 
-/* LOADING SPINNER */
 .loader-overlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -330,7 +325,6 @@ body {
 
 <body>
 
-<!-- LOADING OVERLAY -->
 <div class="loader-overlay" id="loader">
   <div class="spinner"></div>
   <div class="spinner-text">Loading your info...</div>
@@ -347,7 +341,6 @@ body {
 
 <div class="content">
 
-  <!-- PUSH NOTIFICATION PROMPT -->
   <div class="push-prompt-card" id="push-prompt-card" style="display:none">
     <div class="push-prompt-icon">🔔</div>
     <div class="push-prompt-title">Stay in the loop</div>
@@ -356,7 +349,6 @@ body {
     <button class="push-prompt-dismiss" id="push-prompt-dismiss">Not now</button>
   </div>
 
-  <!-- SURVEY CARD (shown after clean is complete) -->
   <div class="survey-card" id="survey-card" style="display:none">
     <div class="survey-title">How was your clean today? 🪟</div>
     <div class="survey-sub">Tap a face to let us know</div>
@@ -383,7 +375,6 @@ body {
     </div>
   </div>
 
-  <!-- NEXT CLEAN -->
   <div class="card">
     <div class="card-label">Your next clean</div>
     <div class="card-title" id="next-clean">Loading...</div>
@@ -391,7 +382,6 @@ body {
     <span class="badge badge-blue" id="next-clean-badge"></span>
   </div>
 
-  <!-- TRACKER SUMMARY -->
   <div class="card">
     <div class="card-label">Today's progress tracker</div>
     <div class="card-title" id="tracker-title">Loading...</div>
@@ -418,7 +408,6 @@ body {
     </div>
   </div>
 
-  <!-- PAYMENT -->
   <div class="card" id="payment-card">
     <div class="card-label" id="payment-label">Payment</div>
     <div class="card-title" id="payment-title">Loading...</div>
@@ -431,7 +420,6 @@ body {
 
 </div>
 
-<!-- REVIEW POPUP -->
 <div class="overlay" id="review-overlay">
   <div class="popup">
     <div class="popup-icon">⭐</div>
@@ -442,7 +430,6 @@ body {
   </div>
 </div>
 
-<!-- BANK TRANSFER PANEL -->
 <div class="pay-overlay" id="pay-overlay">
   <div class="pay-panel">
     <div class="pay-handle"></div>
@@ -642,8 +629,7 @@ function closeReviewPopup() {
 
 init();
 
-// PUSH NOTIFICATION PROMPT
-if (needsPushPermission()) {
+if (needsPushPrompt()) {
   document.getElementById('push-prompt-card').style.display = 'block';
 }
 
@@ -663,7 +649,6 @@ document.getElementById('push-prompt-dismiss').addEventListener('click', functio
   dismissPushPrompt();
 });
 
-// BANK TRANSFER PANEL
 let currentBalance = 0;
 
 document.getElementById('btn-sent').addEventListener('click', iHavePaid);
