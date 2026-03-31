@@ -1,8 +1,9 @@
 // ============================================================
 // service-worker.js — Rossington Window Cleaning PWA
 // ============================================================
-// v22 — Bumped to force cache refresh on all devices
-// BUMP THE VERSION NUMBER EVERY TIME YOU DEPLOY CHANGES
+// v23 — Network first strategy
+// Always tries to get fresh files from server first
+// Falls back to cache only if offline
 // ============================================================
 
 // Firebase Messaging — import compat libraries for service worker
@@ -56,7 +57,7 @@ self.addEventListener('notificationclick', function(event) {
 // PWA Caching
 // ============================================================
 
-const CACHE_NAME = 'rwc-v22';
+const CACHE_NAME = 'rwc-v23';
 const APP_SHELL = [
   './home.html',
   './payments.html',
@@ -99,13 +100,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Network first — always try to get fresh files from server
+  // Falls back to cache only if the user is offline
   event.respondWith(
     fetch(event.request)
       .then(response => {
+        // Save a fresh copy to cache in the background
         const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => {
+        // Network failed — serve from cache so app works offline
+        return caches.match(event.request);
+      })
   );
 });
