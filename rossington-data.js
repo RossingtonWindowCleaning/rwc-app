@@ -127,7 +127,6 @@ async function getAndSaveToken(messaging, registration) {
 
 function needsPushPrompt() {
   if (localStorage.getItem('push_dismissed_' + CUSTOMER_ID)) return false;
-  if (localStorage.getItem('fcm_token_' + CUSTOMER_ID)) return false;
   return true;
 }
 
