@@ -1,5 +1,5 @@
 // ============================================================
-// rossington-data.js — v4.3
+// rossington-data.js — v4.4
 // ============================================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
@@ -94,6 +94,9 @@ async function requestPushPermission() {
     console.log('FCM: permission result:', result);
 
     if (result === 'granted') {
+      // Set the enabled flag immediately so the card never shows again
+      // This is independent of the token saving which happens asynchronously
+      localStorage.setItem('push_enabled_' + CUSTOMER_ID, '1');
       await getAndSaveToken(_fcmMessaging, _fcmRegistration);
       return true;
     }
@@ -126,7 +129,12 @@ async function getAndSaveToken(messaging, registration) {
 }
 
 function needsPushPrompt() {
+  // Don't show if user has dismissed it
   if (localStorage.getItem('push_dismissed_' + CUSTOMER_ID)) return false;
+  // Don't show if user has already enabled notifications
+  if (localStorage.getItem('push_enabled_' + CUSTOMER_ID)) return false;
+  // Don't show if browser has already granted permission (covers reinstalls)
+  if ('Notification' in window && Notification.permission === 'granted') return false;
   return true;
 }
 
