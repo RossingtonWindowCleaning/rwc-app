@@ -57,7 +57,7 @@ self.addEventListener('notificationclick', function(event) {
 // PWA Caching
 // ============================================================
 
-const CACHE_NAME = 'rwc-v23';
+const CACHE_NAME = 'rwc-v25';
 const APP_SHELL = [
   './home.html',
   './payments.html',
