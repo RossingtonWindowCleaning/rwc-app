@@ -1,5 +1,5 @@
 // ============================================================
-// rossington-data.js — v4.4
+// rossington-data.js — v4.5
 // ============================================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
@@ -94,10 +94,10 @@ async function requestPushPermission() {
     console.log('FCM: permission result:', result);
 
     if (result === 'granted') {
-      // Set the enabled flag immediately so the card never shows again
-      // This is independent of the token saving which happens asynchronously
-      localStorage.setItem('push_enabled_' + CUSTOMER_ID, '1');
       await getAndSaveToken(_fcmMessaging, _fcmRegistration);
+      // Hide the card immediately using the browser's own permission state
+      var card = document.getElementById('push-prompt-card');
+      if (card) card.style.display = 'none';
       return true;
     }
     return false;
@@ -128,14 +128,20 @@ async function getAndSaveToken(messaging, registration) {
   }
 }
 
+// ============================================================
+// needsPushPrompt — uses browser's own Notification.permission
+// as the single source of truth. No localStorage flags needed.
+// 'default' = never been asked = show the card
+// 'granted' = already allowed = hide the card
+// 'denied'  = user blocked it = hide the card, nothing we can do
+// ============================================================
 function needsPushPrompt() {
-  // Don't show if user has dismissed it
+  // If notifications aren't supported, don't show
+  if (!('Notification' in window)) return false;
+  // If user has dismissed our card before, don't show
   if (localStorage.getItem('push_dismissed_' + CUSTOMER_ID)) return false;
-  // Don't show if user has already enabled notifications
-  if (localStorage.getItem('push_enabled_' + CUSTOMER_ID)) return false;
-  // Don't show if browser has already granted permission (covers reinstalls)
-  if ('Notification' in window && Notification.permission === 'granted') return false;
-  return true;
+  // Only show if permission is still 'default' (never been asked)
+  return Notification.permission === 'default';
 }
 
 function dismissPushPrompt() {
