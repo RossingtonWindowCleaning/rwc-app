@@ -416,7 +416,7 @@ body {
     <div id="payment-btn-wrap"></div>
   </div>
 
-  <button class="btn btn-review" onclick="window.open('https://g.page/r/CWRJU9K9hyhWEBM/review', '_blank')"">Leave us a review ⭐</button>
+  <button class="btn btn-review" onclick="window.open('https://g.page/r/CWRJU9K9hyhWEBM/review', '_blank')">Leave us a review ⭐</button>
 
 </div>
 
@@ -496,34 +496,6 @@ body {
 <script>
 const GOOGLE_REVIEW_URL = 'https://g.page/r/CWRJU9K9hyhWEBM/review';
 
-// ============================================================
-// SHOW PUSH PROMPT IMMEDIATELY — independent of data loading
-// Runs straight away so new visitors always see the card
-// even if the API call is slow or fails
-// ============================================================
-if (needsPushPrompt()) {
-  document.getElementById('push-prompt-card').style.display = 'block';
-}
-
-document.getElementById('push-prompt-btn').addEventListener('click', async function() {
-  this.textContent = 'Enabling...';
-  this.disabled = true;
-  var granted = await requestPushPermission();
-  if (granted) {
-    document.getElementById('push-prompt-card').style.display = 'none';
-  } else {
-    this.textContent = 'Enable notifications';
-    this.disabled = false;
-  }
-});
-
-document.getElementById('push-prompt-dismiss').addEventListener('click', function() {
-  dismissPushPrompt();
-});
-
-// ============================================================
-// LOAD PAGE DATA
-// ============================================================
 async function init() {
   showLoader();
   try {
@@ -607,7 +579,6 @@ async function init() {
 
   } catch (err) {
     console.error('Failed to load data:', err);
-    hideLoader();
   }
 }
 
@@ -656,7 +627,27 @@ function closeReviewPopup() {
   showThanks();
 }
 
+if (needsPushPrompt()) {
+  document.getElementById('push-prompt-card').style.display = 'block';
+}
+
 init();
+
+document.getElementById('push-prompt-btn').addEventListener('click', async function() {
+  this.textContent = 'Enabling...';
+  this.disabled = true;
+  var granted = await requestPushPermission();
+  if (granted) {
+    document.getElementById('push-prompt-card').style.display = 'none';
+  } else {
+    this.textContent = 'Enable notifications';
+    this.disabled = false;
+  }
+});
+
+document.getElementById('push-prompt-dismiss').addEventListener('click', function() {
+  dismissPushPrompt();
+});
 
 let currentBalance = 0;
 
