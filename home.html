@@ -269,6 +269,7 @@ body {
 .sent-confirmation .sent-icon { font-size: 40px; margin-bottom: 8px; }
 .sent-confirmation .sent-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
 .sent-confirmation .sent-sub { font-size: 13px; color: #666; line-height: 1.5; }
+.bank-loading { text-align: center; color: #999; font-size: 13px; padding: 16px 0; }
 
 .nav {
   position: fixed;
@@ -319,7 +320,6 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
 </style>
 </head>
 
@@ -439,18 +439,12 @@ body {
       <div class="pay-amount-label">Amount to pay</div>
       <div class="pay-amount-value" id="panel-amount">£0.00</div>
     </div>
-    <div class="detail-row">
-      <div><div class="detail-label">Account name</div><div class="detail-value" id="detail-name">Test Test</div></div>
-      <button class="copy-btn" id="copy-name">Copy</button>
+
+    <!-- Bank details — loaded from server, never stored in this file -->
+    <div id="bank-details-wrap">
+      <div class="bank-loading">Loading payment details...</div>
     </div>
-    <div class="detail-row">
-      <div><div class="detail-label">Sort code</div><div class="detail-value" id="detail-sort">01-23-45</div></div>
-      <button class="copy-btn" id="copy-sort">Copy</button>
-    </div>
-    <div class="detail-row">
-      <div><div class="detail-label">Account number</div><div class="detail-value" id="detail-acc">12345678</div></div>
-      <button class="copy-btn" id="copy-acc">Copy</button>
-    </div>
+
     <div style="background:#FFF8E6;border-radius:8px;padding:10px 12px;margin-top:4px;font-size:12px;color:#633806;">
       📝 <strong>Reference:</strong> Please use your home address as the payment reference so we can match it to your account.
     </div>
@@ -495,6 +489,9 @@ body {
 <script src="rossington-data.js"></script>
 <script>
 const GOOGLE_REVIEW_URL = 'https://g.page/r/CWRJU9K9hyhWEBM/review';
+
+let currentBalance = 0;
+let bankDetailsLoaded = false;
 
 async function init() {
   showLoader();
@@ -548,14 +545,15 @@ async function init() {
     document.getElementById('tracker-sub').textContent = status[1];
 
     const balance = parseFloat(c.outstanding_balance) || 0;
+    currentBalance = balance;
+    document.getElementById('panel-amount').textContent = '£' + balance.toFixed(2);
+
     if (balance > 0) {
       document.getElementById('payment-label').textContent = 'Outstanding payment';
       document.getElementById('payment-title').textContent = '£' + balance.toFixed(2) + ' due';
       document.getElementById('payment-sub').textContent = 'Last clean: ' + formatDate(c.last_clean);
       document.getElementById('payment-badge').textContent = 'Overdue';
       document.getElementById('payment-badge').className = 'badge badge-red';
-      document.getElementById('panel-amount').textContent = '£' + balance.toFixed(2);
-      currentBalance = balance;
 
       const payBtn = document.createElement('button');
       payBtn.className = 'btn btn-overdue';
@@ -579,6 +577,37 @@ async function init() {
 
   } catch (err) {
     console.error('Failed to load data:', err);
+  }
+}
+
+async function loadBankDetails() {
+  if (bankDetailsLoaded) return;
+  try {
+    const result = await apiPost({ action: 'getBankDetails' });
+    if (!result.success) throw new Error('Failed to load bank details');
+    document.getElementById('bank-details-wrap').innerHTML = `
+      <div class="detail-row">
+        <div><div class="detail-label">Account name</div><div class="detail-value" id="detail-name">${result.name}</div></div>
+        <button class="copy-btn" id="copy-name">Copy</button>
+      </div>
+      <div class="detail-row">
+        <div><div class="detail-label">Sort code</div><div class="detail-value" id="detail-sort">${result.sort}</div></div>
+        <button class="copy-btn" id="copy-sort">Copy</button>
+      </div>
+      <div class="detail-row">
+        <div><div class="detail-label">Account number</div><div class="detail-value" id="detail-acc">${result.acc}</div></div>
+        <button class="copy-btn" id="copy-acc">Copy</button>
+      </div>
+    `;
+    bankDetailsLoaded = true;
+
+    document.getElementById('copy-name').addEventListener('click', function() { copyDetail('detail-name', this); });
+    document.getElementById('copy-sort').addEventListener('click', function() { copyDetail('detail-sort', this); });
+    document.getElementById('copy-acc').addEventListener('click',  function() { copyDetail('detail-acc',  this); });
+
+  } catch(e) {
+    console.error('Bank details load failed:', e);
+    document.getElementById('bank-details-wrap').innerHTML = '<div class="bank-loading">Could not load payment details. Please try again.</div>';
   }
 }
 
@@ -627,11 +656,13 @@ function closeReviewPopup() {
   showThanks();
 }
 
-if (needsPushPrompt()) {
-  document.getElementById('push-prompt-card').style.display = 'block';
-}
-
 init();
+
+window.addEventListener('load', function() {
+  if (needsPushPrompt()) {
+    document.getElementById('push-prompt-card').style.display = 'block';
+  }
+});
 
 document.getElementById('push-prompt-btn').addEventListener('click', async function() {
   this.textContent = 'Enabling...';
@@ -649,22 +680,18 @@ document.getElementById('push-prompt-dismiss').addEventListener('click', functio
   dismissPushPrompt();
 });
 
-let currentBalance = 0;
-
 document.getElementById('btn-sent').addEventListener('click', iHavePaid);
 document.getElementById('btn-cancel').addEventListener('click', closePayPanel);
 document.getElementById('btn-close-confirm').addEventListener('click', closePayPanel);
-document.getElementById('copy-name').addEventListener('click', function() { copyDetail('detail-name', this); });
-document.getElementById('copy-sort').addEventListener('click', function() { copyDetail('detail-sort', this); });
-document.getElementById('copy-acc').addEventListener('click',  function() { copyDetail('detail-acc',  this); });
 document.getElementById('pay-overlay').addEventListener('click', function(e) {
   if (e.target === this) closePayPanel();
 });
 
-function openPayPanel() {
+async function openPayPanel() {
   document.getElementById('pay-overlay').classList.add('show');
   document.getElementById('pay-actions').style.display = 'block';
   document.getElementById('sent-confirmation').style.display = 'none';
+  await loadBankDetails();
 }
 
 function closePayPanel() {
