@@ -6,50 +6,298 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0C447C">
 <link rel="apple-touch-icon" href="icon-192.png">
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
 <title>Rossington Window Cleaning</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-  .container { background: white; border-radius: 16px; padding: 32px 24px; width: 90%; max-width: 360px; text-align: center; }
-  .logo { background: #0C447C; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .container {
+    background: white;
+    border-radius: 16px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+  }
+
+  .logo {
+    background: #0C447C;
+    border-radius: 12px;
+    padding: 20px 16px;
+    margin-bottom: 24px;
+  }
+
   .logo h1 { color: white; font-size: 18px; font-weight: 600; }
   .logo p { color: #B5D4F4; font-size: 12px; margin-top: 4px; }
-  .input-group { margin-bottom: 16px; text-align: left; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .screen-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #1a1a1a;
+  }
+
+  .screen-sub {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .input-group { margin-bottom: 14px; text-align: left; }
   .input-group label { font-size: 13px; color: #555; margin-bottom: 6px; display: block; }
-  .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+  .input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+  }
   .input-group input:focus { border-color: #0C447C; }
-  .btn { width: 100%; padding: 12px; background: #0C447C; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
-  .btn:hover { background: #185FA5; }
+
+  .btn {
+    width: 100%;
+    padding: 13px;
+    background: #0C447C;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  .btn:disabled { background: #aaa; cursor: not-allowed; }
+
+  .error-msg {
+    background: #FCEBEB;
+    color: #A32D2D;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+    display: none;
+    text-align: left;
+  }
+
   .footer { margin-top: 20px; font-size: 12px; color: #999; }
+
+  .password-rules {
+    background: #f0f4f8;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    text-align: left;
+    font-size: 12px;
+    color: #666;
+    line-height: 1.6;
+  }
 </style>
 </head>
 <body>
+
 <div class="container">
+
   <div class="logo">
     <h1>Rossington Window Cleaning</h1>
     <p>Customer Portal</p>
   </div>
-  <div class="input-group">
-    <label>Email address</label>
-    <input type="email" placeholder="Enter your email">
+
+  <!-- SCREEN 1: LOGIN -->
+  <div class="screen active" id="screen-login">
+    <div class="screen-title">Welcome back</div>
+    <div class="screen-sub">Sign in with your mobile number and password</div>
+    <div class="input-group">
+      <label>Mobile number</label>
+      <input type="tel" id="input-phone" placeholder="e.g. 07700900000">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="input-password" placeholder="Enter your password">
+    </div>
+    <button class="btn" id="btn-login">Sign in</button>
+    <div class="error-msg" id="login-error">Incorrect mobile number or password. Please try again.</div>
+    <div class="footer">Need help? Contact Rossington Window Cleaning</div>
   </div>
-  <div class="input-group">
-    <label>Password</label>
-    <input type="password" placeholder="Enter your password">
+
+  <!-- SCREEN 2: CHANGE PASSWORD (first login only) -->
+  <div class="screen" id="screen-change-password">
+    <div class="screen-title">Set your password 🔐</div>
+    <div class="screen-sub">This is your first time signing in. Please set a new password that you'll remember.</div>
+    <div class="password-rules">
+      Your password must be at least 8 characters long and include at least one number.
+    </div>
+    <div class="input-group">
+      <label>New password</label>
+      <input type="password" id="input-new-password" placeholder="Choose a password">
+    </div>
+    <div class="input-group">
+      <label>Confirm new password</label>
+      <input type="password" id="input-confirm-password" placeholder="Type it again">
+    </div>
+    <button class="btn" id="btn-change-password">Save password & continue</button>
+    <div class="error-msg" id="change-error">Passwords do not match. Please try again.</div>
   </div>
-  <button class="btn" onclick="window.location.href='home.html'">Sign in</button>
-  <div class="footer">
-    Need help? Contact Rossington Window Cleaning
-  </div>
+
 </div>
+
+<script src="rossington-data.js"></script>
 <script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js")
-    .then(() => console.log("SW registered"))
-    .catch(err => console.log("SW failed:", err));
+
+// ============================================================
+// Check if already logged in — skip login screen if so
+// ============================================================
+window.addEventListener('load', function() {
+  var savedId = localStorage.getItem('rwc_customer_id');
+  if (savedId) {
+    window.location.href = 'home.html?customer_id=' + savedId;
+  }
+});
+
+// ============================================================
+// Register service worker
+// ============================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('service-worker.js')
+    .then(() => console.log('SW registered'))
+    .catch(err => console.log('SW failed:', err));
 }
+
+// ============================================================
+// LOGIN
+// ============================================================
+var loggedInCustomerId = null;
+
+document.getElementById('btn-login').addEventListener('click', async function() {
+  var phone    = document.getElementById('input-phone').value.trim();
+  var password = document.getElementById('input-password').value.trim();
+  var errorEl  = document.getElementById('login-error');
+
+  errorEl.style.display = 'none';
+
+  if (!phone || !password) {
+    errorEl.textContent = 'Please enter your mobile number and password.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  this.textContent = 'Signing in...';
+  this.disabled = true;
+
+  try {
+    var result = await apiPost({ action: 'login', phone: phone, password: password });
+
+    if (result.success) {
+      loggedInCustomerId = result.customer_id;
+
+      if (!result.password_changed) {
+        // First login — force password change
+        showScreen('screen-change-password');
+      } else {
+        // Returning customer — save and go to home
+        localStorage.setItem('rwc_customer_id', loggedInCustomerId);
+        window.location.href = 'home.html?customer_id=' + loggedInCustomerId;
+      }
+    } else {
+      errorEl.textContent = 'Incorrect mobile number or password. Please try again.';
+      errorEl.style.display = 'block';
+    }
+  } catch(e) {
+    console.error('Login error:', e);
+    errorEl.textContent = 'Connection error. Please check your internet and try again.';
+    errorEl.style.display = 'block';
+  }
+
+  this.textContent = 'Sign in';
+  this.disabled = false;
+});
+
+// ============================================================
+// CHANGE PASSWORD
+// ============================================================
+document.getElementById('btn-change-password').addEventListener('click', async function() {
+  var newPassword     = document.getElementById('input-new-password').value.trim();
+  var confirmPassword = document.getElementById('input-confirm-password').value.trim();
+  var errorEl         = document.getElementById('change-error');
+
+  errorEl.style.display = 'none';
+
+  // Validation
+  if (!newPassword || !confirmPassword) {
+    errorEl.textContent = 'Please fill in both password fields.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    errorEl.textContent = 'Passwords do not match. Please try again.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if (newPassword.length < 8) {
+    errorEl.textContent = 'Password must be at least 8 characters long.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if (!/\d/.test(newPassword)) {
+    errorEl.textContent = 'Password must include at least one number.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  this.textContent = 'Saving...';
+  this.disabled = true;
+
+  try {
+    var result = await apiPost({
+      action: 'changePassword',
+      customer_id: loggedInCustomerId,
+      new_password: newPassword
+    });
+
+    if (result.success) {
+      localStorage.setItem('rwc_customer_id', loggedInCustomerId);
+      window.location.href = 'home.html?customer_id=' + loggedInCustomerId;
+    } else {
+      errorEl.textContent = 'Something went wrong. Please try again.';
+      errorEl.style.display = 'block';
+    }
+  } catch(e) {
+    console.error('Change password error:', e);
+    errorEl.textContent = 'Connection error. Please check your internet and try again.';
+    errorEl.style.display = 'block';
+  }
+
+  this.textContent = 'Save password & continue';
+  this.disabled = false;
+});
+
+// ============================================================
+// SCREEN SWITCHER
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s) {
+    s.classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
 </script>
 </body>
 </html>
