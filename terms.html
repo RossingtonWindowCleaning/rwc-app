@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0C447C">
+<meta name="theme-color" content="#050d1a">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
@@ -12,191 +12,79 @@
 
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background: #0a1628; }
 
-body {
-  font-family: Arial, sans-serif;
-  background: #f0f4f8;
-}
-
-.header {
-  background: #0C447C;
-  padding: 20px 16px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
+.header { background: #050d1a; padding: 20px 16px 24px; display: flex; align-items: center; justify-content: space-between; }
 .header-text { flex: 1; }
+.header h2 { color: white; font-size: 20px; margin-top: 4px; }
+.header-logo { flex-shrink: 0; margin-left: 12px; }
+.header-logo img { height: 44px; width: auto; display: block; }
 
-.header h1 {
-  color: #B5D4F4;
-  font-size: 12px;
-}
+.content { padding: 16px; padding-bottom: 90px; }
 
-.header h2 {
-  color: white;
-  font-size: 20px;
-  margin-top: 4px;
-}
+.card { background: rgba(255,255,255,0.04); border-radius: 16px; padding: 16px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.08); }
+.term-title { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #D4AA28; }
+.term-text { font-size: 13px; color: #4a7aaa; line-height: 1.5; }
 
-.header-logo {
-  flex-shrink: 0;
-  margin-left: 12px;
-}
-
-.header-logo img {
-  height: 44px;
-  width: auto;
-  display: block;
-}
-
-.content {
-  padding: 16px;
-  padding-bottom: 90px;
-}
-
-.card {
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
-  border: 1px solid #eee;
-}
-
-.term-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.term-text {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.5;
-}
-
-.nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  border-top: 1px solid #eee;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 0 20px;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 10px;
-  color: #999;
-  text-decoration: none;
-}
-
-.nav-item.active {
-  color: #0C447C;
-}
-
-.nav-icon {
-  font-size: 20px;
-}
+.nav { position: fixed; bottom: 0; left: 0; right: 0; background: #050d1a; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-around; padding: 10px 0 20px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #2a5a8a; text-decoration: none; }
+.nav-item.active { color: #D4AA28; }
+.nav-icon { font-size: 20px; }
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <div class="header-text">
-    <h2>Simple terms</h2>
-  </div>
-  <div class="header-logo">
-    <img src="logo-header.png" alt="Rossington Window Cleaning">
-  </div>
+  <div class="header-text"><h2>Simple terms</h2></div>
+  <div class="header-logo"><img src="logo-header.png" alt="Rossington Window Cleaning"></div>
 </div>
 
 <div class="content">
 
   <div class="card">
     <div class="term-title">💳 Payments</div>
-    <div class="term-text">
-      Payment is due within 48 hours of your clean. Overdue payments may result in reminders and possible suspension of service.
-    </div>
+    <div class="term-text">Payment is due within 48 hours of your clean. Overdue payments may result in reminders and possible suspension of service.</div>
   </div>
 
   <div class="card">
     <div class="term-title">🚪 Access</div>
-    <div class="term-text">
-      Please make sure we can access your property on the day. The first missed visit is free, but after that we may charge 25% to cover the extra travel time needed to come back.
-    </div>
+    <div class="term-text">Please make sure we can access your property on the day. The first missed visit is free, but after that we may charge 25% to cover the extra travel time needed to come back.</div>
   </div>
 
   <div class="card">
     <div class="term-title">📅 Cancellations</div>
-    <div class="term-text">
-      Please give at least 24 hours notice if you need to cancel. Missed cleans can lead to a build-up of dirt, which takes longer to clean next time, so prices may increase slightly. Repeated cancellations may result in being removed from the round.
-    </div>
+    <div class="term-text">Please give at least 24 hours notice if you need to cancel. Missed cleans can lead to a build-up of dirt, which takes longer to clean next time, so prices may increase slightly. Repeated cancellations may result in being removed from the round.</div>
   </div>
 
   <div class="card">
     <div class="term-title">💷 Pricing</div>
-    <div class="term-text">
-      First cleans include a 30% extra charge, as they are a full deep clean to get your windows up to standard before regular maintenance cleans.
-    </div>
+    <div class="term-text">First cleans include a 30% extra charge, as they are a full deep clean to get your windows up to standard before regular maintenance cleans.</div>
   </div>
 
   <div class="card">
     <div class="term-title">⭐ Referrals</div>
-    <div class="term-text">
-      Referral rewards are applied once your referred friend has completed their first clean.
-    </div>
+    <div class="term-text">Referral rewards are applied once your referred friend has completed their first clean.</div>
   </div>
 
   <div class="card">
     <div class="term-title">🔒 Your data</div>
-    <div class="term-text">
-      Your details are kept secure and only used to manage your service. We never share your information.
-    </div>
+    <div class="term-text">Your details are kept secure and only used to manage your service. We never share your information.</div>
   </div>
 
   <div class="card">
     <div class="term-title">👍 Service</div>
-    <div class="term-text">
-      We always aim to provide a reliable, friendly service. In rare cases, we may need to suspend or stop service if necessary.
-    </div>
+    <div class="term-text">We always aim to provide a reliable, friendly service. In rare cases, we may need to suspend or stop service if necessary.</div>
   </div>
 
 </div>
 
 <nav class="nav">
-
-  <a href="home.html" class="nav-item">
-    <span class="nav-icon">🏠</span>
-    <span>Home</span>
-  </a>
-
-  <a href="payments.html" class="nav-item">
-    <span class="nav-icon">💳</span>
-    <span>Payments</span>
-  </a>
-
-  <a href="tracker.html" class="nav-item">
-    <span class="nav-icon">📍</span>
-    <span>Tracker</span>
-  </a>
-
-  <a href="referral.html" class="nav-item">
-    <span class="nav-icon">⭐</span>
-    <span>Refer</span>
-  </a>
-
-  <a href="terms.html" class="nav-item active">
-    <span class="nav-icon">📄</span>
-    <span>T&Cs</span>
-  </a>
-
+  <a href="home.html" class="nav-item"><span class="nav-icon">🏠</span><span>Home</span></a>
+  <a href="payments.html" class="nav-item"><span class="nav-icon">💳</span><span>Payments</span></a>
+  <a href="tracker.html" class="nav-item"><span class="nav-icon">📍</span><span>Tracker</span></a>
+  <a href="referral.html" class="nav-item"><span class="nav-icon">⭐</span><span>Refer</span></a>
+  <a href="terms.html" class="nav-item active"><span class="nav-icon">📄</span><span>T&Cs</span></a>
 </nav>
 
 </body>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0C447C">
+<meta name="theme-color" content="#050d1a">
 <link rel="apple-touch-icon" href="icon-192.png">
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
@@ -12,59 +12,60 @@
 
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: Arial, sans-serif; background: #f0f4f8; }
+body { font-family: Arial, sans-serif; background: #0a1628; }
 
-.header { background: #0C447C; padding: 20px 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+.header { background: #050d1a; padding: 20px 16px 24px; display: flex; align-items: center; justify-content: space-between; }
 .header-text { flex: 1; }
 .header h2 { color: white; font-size: 20px; margin-top: 4px; }
 .header-logo { flex-shrink: 0; margin-left: 12px; }
-.header-logo img { height: 44px; width: auto; display: block; mix-blend-mode: screen; }
+.header-logo img { height: 44px; width: auto; display: block; }
 
 .content { padding: 16px; padding-bottom: 90px; }
 
-.card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #eee; }
-.card-title { font-size: 16px; font-weight: 600; }
-.card-sub { font-size: 13px; color: #666; margin-top: 6px; line-height: 1.5; }
+.card { background: rgba(255,255,255,0.04); border-radius: 16px; padding: 16px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.08); }
+.card-title { font-size: 16px; font-weight: 600; color: #e0ecf8; }
+.card-sub { font-size: 13px; color: #4a7aaa; margin-top: 6px; line-height: 1.5; }
 
 .window-wrap { display: flex; justify-content: space-between; margin-top: 16px; }
 .window { width: 30%; text-align: center; }
-.window-box { height: 80px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 6px; }
-.dirty { background: #ddd; }
-.clean { background: #E6F1FB; border: 2px solid #378ADD; }
-.reward { font-size: 11px; font-weight: 600; }
-.reward-banner { background: #EAF3DE; border: 1px solid #C0DD97; border-radius: 8px; padding: 12px; margin-top: 12px; text-align: center; font-size: 13px; font-weight: 600; color: #27500A; }
-.progress-text { text-align: center; font-size: 13px; color: #666; margin-top: 12px; }
+.window-box { height: 80px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 6px; }
+.dirty { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); }
+.clean { background: rgba(212,170,40,0.1); border: 1px solid rgba(212,170,40,0.3); }
+.reward { font-size: 11px; font-weight: 600; color: #D4AA28; }
+.reward-banner { background: rgba(212,170,40,0.08); border: 1px solid rgba(212,170,40,0.25); border-radius: 10px; padding: 12px; margin-top: 12px; text-align: center; font-size: 13px; font-weight: 600; color: #D4AA28; }
+.progress-text { text-align: center; font-size: 13px; color: #4a7aaa; margin-top: 12px; }
 
-.form-label { font-size: 12px; color: #555; margin-bottom: 6px; display: block; font-weight: 600; }
-.form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 12px; outline: none; font-family: Arial, sans-serif; }
-.form-input:focus { border-color: #0C447C; }
+.form-label { font-size: 12px; color: #7aabdc; margin-bottom: 6px; display: block; font-weight: 600; }
+.form-input { width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; font-size: 14px; margin-bottom: 12px; outline: none; font-family: Arial, sans-serif; background: rgba(255,255,255,0.05); color: #e0ecf8; }
+.form-input:focus { border-color: #D4AA28; }
+.form-input::placeholder { color: #3a6a9a; }
 
-.btn { width: 100%; padding: 13px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; margin-top: 4px; cursor: pointer; }
-.btn-primary { background: #0C447C; color: white; }
+.btn { width: 100%; padding: 13px; border-radius: 10px; border: none; font-size: 14px; font-weight: 600; margin-top: 4px; cursor: pointer; }
+.btn-primary { background: #D4AA28; color: #050d1a; }
 .btn-whatsapp { background: #25D366; color: white; margin-top: 8px; }
 
-.submitted-card { display: none; background: #EAF3DE; border: 1px solid #C0DD97; border-radius: 12px; padding: 16px; margin-bottom: 12px; text-align: center; }
+.submitted-card { display: none; background: rgba(212,170,40,0.07); border: 1px solid rgba(212,170,40,0.25); border-radius: 16px; padding: 16px; margin-bottom: 10px; text-align: center; }
 .submitted-icon { font-size: 36px; margin-bottom: 8px; }
-.submitted-title { font-size: 15px; font-weight: 700; color: #27500A; margin-bottom: 6px; }
-.submitted-sub { font-size: 13px; color: #444; line-height: 1.5; margin-bottom: 12px; }
+.submitted-title { font-size: 15px; font-weight: 700; color: #D4AA28; margin-bottom: 6px; }
+.submitted-sub { font-size: 13px; color: #8a7218; line-height: 1.5; margin-bottom: 12px; }
 
-.referral-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+.referral-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
 .referral-row:last-child { border-bottom: none; }
-.referral-addr { font-weight: 600; color: #1a1a1a; }
+.referral-addr { font-weight: 600; color: #e0ecf8; }
 .referral-status { font-size: 11px; padding: 3px 8px; border-radius: 10px; }
-.status-pending { background: #FFF8E6; color: #633806; }
-.status-confirmed { background: #EAF3DE; color: #27500A; }
-.empty-state { text-align: center; color: #999; font-size: 13px; padding: 12px 0; }
+.status-pending { background: rgba(212,170,40,0.1); color: #D4AA28; border: 1px solid rgba(212,170,40,0.2); }
+.status-confirmed { background: rgba(100,180,100,0.12); color: #7dc87d; border: 1px solid rgba(100,180,100,0.2); }
+.empty-state { text-align: center; color: #4a7aaa; font-size: 13px; padding: 12px 0; }
 
-.nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; padding: 10px 0 20px; }
-.nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #999; text-decoration: none; }
-.nav-item.active { color: #0C447C; }
+.nav { position: fixed; bottom: 0; left: 0; right: 0; background: #050d1a; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-around; padding: 10px 0 20px; }
+.nav-item { display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #2a5a8a; text-decoration: none; }
+.nav-item.active { color: #D4AA28; }
 .nav-icon { font-size: 20px; }
 
-.loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.85); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+.loader-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5,13,26,0.9); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
 .loader-overlay.hidden { display: none; }
-.spinner { width: 40px; height: 40px; border: 4px solid #e0e0e0; border-top-color: #0C447C; border-radius: 50%; animation: spin 0.8s linear infinite; }
-.spinner-text { font-size: 13px; color: #666; font-family: Arial, sans-serif; }
+.spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.08); border-top-color: #D4AA28; border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spinner-text { font-size: 13px; color: #4a7aaa; font-family: Arial, sans-serif; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
@@ -99,7 +100,6 @@ body { font-family: Arial, sans-serif; background: #f0f4f8; }
     <div id="reward-banner"></div>
   </div>
 
-  <!-- REFER FORM -->
   <div class="card" id="refer-form-card">
     <div class="card-title">Make a referral</div>
     <div class="card-sub" style="margin-bottom:14px">Enter your friend's details and we'll be in touch with them.</div>
@@ -110,7 +110,6 @@ body { font-family: Arial, sans-serif; background: #f0f4f8; }
     <button class="btn btn-primary" id="btn-submit-referral">Submit referral</button>
   </div>
 
-  <!-- SUCCESS STATE -->
   <div class="submitted-card" id="submitted-card">
     <div class="submitted-icon">🎉</div>
     <div class="submitted-title">Referral submitted!</div>
@@ -119,7 +118,6 @@ body { font-family: Arial, sans-serif; background: #f0f4f8; }
     <button class="btn btn-primary" style="margin-top:8px" id="btn-refer-another">Refer another friend</button>
   </div>
 
-  <!-- PAST REFERRALS -->
   <div class="card">
     <div class="card-title">Your referrals</div>
     <div id="referrals-list"><div class="empty-state">No referrals yet — make your first one above!</div></div>
@@ -137,44 +135,37 @@ body { font-family: Arial, sans-serif; background: #f0f4f8; }
 
 <script src="rossington-data.js"></script>
 <script>
-
 async function init() {
   showLoader();
   try {
     const data = await loadAllData();
     hideLoader();
     if (!data.success) return;
-
     const count = data.referrals ? parseInt(data.referrals.referral_count) || 0 : 0;
-
     for (let i = 1; i <= 3; i++) {
       const box = document.getElementById('window-' + i);
       if (i <= count) { box.className = 'window-box clean'; box.textContent = '🪟✨'; }
-      else            { box.className = 'window-box dirty'; box.textContent = '🪟'; }
+      else { box.className = 'window-box dirty'; box.textContent = '🪟'; }
     }
-
     let progressText = '', bannerHTML = '';
     if      (count === 0)  { progressText = 'Refer your first friend to earn 10% off your next clean!'; }
     else if (count === 1)  { progressText = '1 referral done — 10% off unlocked! One more for another 10% off.'; bannerHTML = '<div class="reward-banner">🎉 10% off your next clean — unlocked!</div>'; }
     else if (count === 2)  { progressText = '2 referrals done — two 10% discounts banked! Just 1 more for a FREE clean!'; bannerHTML = '<div class="reward-banner">🎉 Two 10% discounts banked!</div>'; }
     else if (count >= 3)   { progressText = 'Amazing — you\'ve earned a FREE clean! 🎉'; bannerHTML = '<div class="reward-banner">🎉 FREE clean unlocked! We\'ll be in touch.</div>'; }
-
     document.getElementById('progress-text').textContent = progressText;
     document.getElementById('reward-banner').innerHTML = bannerHTML;
-
     const list = document.getElementById('referrals-list');
     if (data.referral_list && data.referral_list.length > 0) {
       list.innerHTML = data.referral_list.map(r => `
         <div class="referral-row">
           <div>
             <div class="referral-addr">${r.address}</div>
-            <div style="font-size:11px;color:#999;margin-top:2px">${r.phone}</div>
+            <div style="font-size:11px;color:#3a6a9a;margin-top:2px">${r.phone}</div>
           </div>
           <span class="referral-status ${r.confirmed ? 'status-confirmed' : 'status-pending'}">${r.confirmed ? 'Confirmed ✅' : 'Pending'}</span>
         </div>
       `).join('');
     }
-
   } catch (err) {
     console.error('Failed to load referrals:', err);
     hideLoader();
@@ -186,44 +177,31 @@ document.getElementById('btn-submit-referral').addEventListener('click', async f
   const phone   = document.getElementById('ref-phone').value.trim();
   if (!address) { alert('Please enter your friend\'s address.'); return; }
   if (!phone)   { alert('Please enter your friend\'s contact number.'); return; }
-
   this.textContent = 'Submitting...';
   this.disabled = true;
-
   let apiResult;
   try {
     apiResult = await apiPost({ action: 'submitReferral', referred_address: address, referred_phone: phone });
-    console.log('Referral result:', JSON.stringify(apiResult));
   } catch(e) {
-    console.error('apiPost failed:', e);
-    alert('Connection error on submit: ' + e.message);
+    alert('Connection error: ' + e.message);
     this.textContent = 'Submit referral';
     this.disabled = false;
     return;
   }
-
   if (!apiResult.success) {
     alert('Server error: ' + (apiResult.error || 'Unknown error'));
     this.textContent = 'Submit referral';
     this.disabled = false;
     return;
   }
-
   document.getElementById('refer-form-card').style.display = 'none';
   document.getElementById('submitted-card').style.display = 'block';
   document.getElementById('submitted-sub').textContent = 'We\'ll be in touch with ' + address + ' shortly. Send them a message to let them know!';
-
   document.getElementById('btn-whatsapp-share').onclick = function() {
     const msg = encodeURIComponent('Hi! I use Rossington Window Cleaning and they\'re brilliant. I\'ve put your name forward — they\'ll be in touch soon. Give them a call if you\'d like to get booked in! 🪟✨');
     window.open('https://wa.me/?text=' + msg, '_blank');
   };
-
-  try {
-    clearCache();
-    await init();
-  } catch(e) {
-    console.error('Refresh failed:', e);
-  }
+  try { clearCache(); await init(); } catch(e) { console.error('Refresh failed:', e); }
 });
 
 document.getElementById('btn-refer-another').addEventListener('click', function() {
@@ -237,9 +215,7 @@ document.getElementById('btn-refer-another').addEventListener('click', function(
 
 function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
 function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
-
 init();
 </script>
-
 </body>
 </html>
