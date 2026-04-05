@@ -130,8 +130,8 @@
       <input type="password" id="input-password" placeholder="Enter your password">
     </div>
     <button class="btn" id="btn-login">Sign in</button>
-    <div class="error-msg" id="login-error">Incorrect mobile number or password. Please try again.</div>
-    <div class="footer">Need help? Contact Rossington Window Cleaning</div>
+    <div class="error-msg" id="login-error"></div>
+    <div class="footer">Forgotten your password? Contact Rossington Window Cleaning and we'll reset it for you.</div>
   </div>
 
   <!-- SCREEN 2: CHANGE PASSWORD (first login only) -->
@@ -150,21 +150,39 @@
       <input type="password" id="input-confirm-password" placeholder="Type it again">
     </div>
     <button class="btn" id="btn-change-password">Save password & continue</button>
-    <div class="error-msg" id="change-error">Passwords do not match. Please try again.</div>
+    <div class="error-msg" id="change-error"></div>
   </div>
 
 </div>
 
-<script src="rossington-data.js"></script>
 <script>
 
+const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
+
 // ============================================================
-// Check if already logged in — skip login screen if so
+// Check if already logged in with a valid session
 // ============================================================
-window.addEventListener('load', function() {
-  var savedId = localStorage.getItem('rwc_customer_id');
-  if (savedId) {
-    window.location.href = 'home.html?customer_id=' + savedId;
+window.addEventListener('load', async function() {
+  var savedId    = localStorage.getItem('rwc_customer_id');
+  var savedToken = localStorage.getItem('rwc_session_token');
+
+  if (savedId && savedToken) {
+    try {
+      var result = await apiPostRaw({
+        action: 'verifySession',
+        customer_id: savedId,
+        session_token: savedToken
+      });
+      if (result.valid) {
+        window.location.href = 'home.html?customer_id=' + savedId;
+        return;
+      }
+    } catch(e) {
+      // Network error — let them log in again
+    }
+    // Session invalid — clear it
+    localStorage.removeItem('rwc_customer_id');
+    localStorage.removeItem('rwc_session_token');
   }
 });
 
@@ -175,6 +193,29 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js')
     .then(() => console.log('SW registered'))
     .catch(err => console.log('SW failed:', err));
+}
+
+// ============================================================
+// Generate a random session token
+// ============================================================
+function generateToken() {
+  var arr = new Uint8Array(32);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ============================================================
+// Raw API post — no session token attached
+// ============================================================
+async function apiPostRaw(body) {
+  var response = await fetch(API_URL, {
+    method: "POST",
+    mode: "cors",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) throw new Error("Network error: " + response.status);
+  return response.json();
 }
 
 // ============================================================
@@ -199,18 +240,17 @@ document.getElementById('btn-login').addEventListener('click', async function() 
   this.disabled = true;
 
   try {
-    var result = await apiPost({ action: 'login', phone: phone, password: password });
+    var result = await apiPostRaw({ action: 'login', phone: phone, password: password });
 
     if (result.success) {
       loggedInCustomerId = result.customer_id;
 
       if (!result.password_changed) {
-        // First login — force password change
+        // First login — force password change before saving session
         showScreen('screen-change-password');
       } else {
-        // Returning customer — save and go to home
-        localStorage.setItem('rwc_customer_id', loggedInCustomerId);
-        window.location.href = 'home.html?customer_id=' + loggedInCustomerId;
+        // Returning customer — generate token, save session, go to home
+        await saveSessionAndRedirect(loggedInCustomerId);
       }
     } else {
       errorEl.textContent = 'Incorrect mobile number or password. Please try again.';
@@ -236,7 +276,6 @@ document.getElementById('btn-change-password').addEventListener('click', async f
 
   errorEl.style.display = 'none';
 
-  // Validation
   if (!newPassword || !confirmPassword) {
     errorEl.textContent = 'Please fill in both password fields.';
     errorEl.style.display = 'block';
@@ -265,15 +304,14 @@ document.getElementById('btn-change-password').addEventListener('click', async f
   this.disabled = true;
 
   try {
-    var result = await apiPost({
+    var result = await apiPostRaw({
       action: 'changePassword',
       customer_id: loggedInCustomerId,
       new_password: newPassword
     });
 
     if (result.success) {
-      localStorage.setItem('rwc_customer_id', loggedInCustomerId);
-      window.location.href = 'home.html?customer_id=' + loggedInCustomerId;
+      await saveSessionAndRedirect(loggedInCustomerId);
     } else {
       errorEl.textContent = 'Something went wrong. Please try again.';
       errorEl.style.display = 'block';
@@ -287,6 +325,25 @@ document.getElementById('btn-change-password').addEventListener('click', async f
   this.textContent = 'Save password & continue';
   this.disabled = false;
 });
+
+// ============================================================
+// Save session token to sheet and localStorage, then redirect
+// ============================================================
+async function saveSessionAndRedirect(customerId) {
+  var token = generateToken();
+  try {
+    await apiPostRaw({
+      action: 'saveSession',
+      customer_id: customerId,
+      session_token: token
+    });
+  } catch(e) {
+    console.error('Session save failed:', e);
+  }
+  localStorage.setItem('rwc_customer_id', customerId);
+  localStorage.setItem('rwc_session_token', token);
+  window.location.href = 'home.html?customer_id=' + customerId;
+}
 
 // ============================================================
 // SCREEN SWITCHER

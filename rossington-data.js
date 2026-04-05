@@ -1,5 +1,5 @@
 // ============================================================
-// rossington-data.js — v4.5
+// rossington-data.js — v5.0
 // ============================================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
@@ -17,11 +17,71 @@ const FIREBASE_CONFIG = {
 
 const FCM_VAPID_KEY = "BAgoot4I5JbVwZMquWu1Hty6UZrb1S6Gac_tNv-LTAm5Rwl_MNRm_MFNbxblja4VHWDsq-UNnRJKjYb7Epz_kAA";
 
-const CUSTOMER_ID = getCustomerIdFromURL() || "1";
+// ============================================================
+// SESSION MANAGEMENT
+// Customer ID and session token are read from localStorage
+// set at login time. URL parameter is no longer used.
+// ============================================================
+const CUSTOMER_ID = getCustomerId();
 
-function getCustomerIdFromURL() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("customer_id");
+function getCustomerId() {
+  // First check localStorage (set at login)
+  var saved = localStorage.getItem('rwc_customer_id');
+  if (saved) return saved;
+  // Fallback to URL param for backwards compatibility
+  var params = new URLSearchParams(window.location.search);
+  return params.get('customer_id') || '1';
+}
+
+function getSessionToken() {
+  return localStorage.getItem('rwc_session_token');
+}
+
+// ============================================================
+// checkSession — runs on every customer page load
+// Silently verifies the session token against the sheet
+// If invalid, clears localStorage and redirects to login
+// ============================================================
+async function checkSession() {
+  var customerId = localStorage.getItem('rwc_customer_id');
+  var sessionToken = localStorage.getItem('rwc_session_token');
+
+  // No saved login at all — send to login page
+  if (!customerId || !sessionToken) {
+    redirectToLogin();
+    return false;
+  }
+
+  try {
+    var result = await apiPostRaw({
+      action: 'verifySession',
+      customer_id: customerId,
+      session_token: sessionToken
+    });
+
+    if (!result.valid) {
+      // Session invalid — password was reset or token mismatch
+      clearSession();
+      redirectToLogin();
+      return false;
+    }
+
+    return true;
+
+  } catch(e) {
+    // Network error — don't boot them out, just let them continue
+    console.log('Session check failed (network):', e);
+    return true;
+  }
+}
+
+function clearSession() {
+  localStorage.removeItem('rwc_customer_id');
+  localStorage.removeItem('rwc_session_token');
+}
+
+function redirectToLogin() {
+  window.location.href = 'index.html';
 }
 
 // ============================================================
@@ -95,7 +155,6 @@ async function requestPushPermission() {
 
     if (result === 'granted') {
       await getAndSaveToken(_fcmMessaging, _fcmRegistration);
-      // Hide the card immediately using the browser's own permission state
       var card = document.getElementById('push-prompt-card');
       if (card) card.style.display = 'none';
       return true;
@@ -128,19 +187,9 @@ async function getAndSaveToken(messaging, registration) {
   }
 }
 
-// ============================================================
-// needsPushPrompt — uses browser's own Notification.permission
-// as the single source of truth. No localStorage flags needed.
-// 'default' = never been asked = show the card
-// 'granted' = already allowed = hide the card
-// 'denied'  = user blocked it = hide the card, nothing we can do
-// ============================================================
 function needsPushPrompt() {
-  // If notifications aren't supported, don't show
   if (!('Notification' in window)) return false;
-  // If user has dismissed our card before, don't show
   if (localStorage.getItem('push_dismissed_' + CUSTOMER_ID)) return false;
-  // Only show if permission is still 'default' (never been asked)
   return Notification.permission === 'default';
 }
 
@@ -189,12 +238,29 @@ function clearCache() {
   try { sessionStorage.removeItem(CACHE_KEY + "_" + CUSTOMER_ID); } catch(e) {}
 }
 
+// apiPost includes customer_id and session_token automatically
 async function apiPost(body) {
   var response = await fetch(API_URL, {
     method: "POST",
     mode: "cors",
     headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify({ ...body, customer_id: CUSTOMER_ID })
+    body: JSON.stringify({
+      ...body,
+      customer_id: CUSTOMER_ID,
+      session_token: getSessionToken()
+    })
+  });
+  if (!response.ok) throw new Error("Network error: " + response.status);
+  return response.json();
+}
+
+// apiPostRaw — used for session verification only, no token attached
+async function apiPostRaw(body) {
+  var response = await fetch(API_URL, {
+    method: "POST",
+    mode: "cors",
+    headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(body)
   });
   if (!response.ok) throw new Error("Network error: " + response.status);
   return response.json();
