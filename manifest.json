@@ -2,7 +2,7 @@
   "name": "Rossington Window Cleaning",
   "short_name": "Rossington WC",
   "description": "Your window cleaning customer portal",
-  "start_url": "./home.html",
+  "start_url": "./index.html",
   "scope": ".",
   "display": "standalone",
   "background_color": "#0C447C",
