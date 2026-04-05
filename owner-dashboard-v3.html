@@ -3,359 +3,1007 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rossington Window Cleaning — Owner Dashboard</title>
+<title>RWC — Owner Dashboard</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; background: #f0f4f8; min-height: 100vh; }
-  .header { background: #27500A; padding: 20px 16px 24px; }
-  .header h1 { color: #C0DD97; font-size: 12px; font-weight: 500; }
-  .header h2 { color: white; font-size: 18px; font-weight: 600; margin-top: 4px; }
-  .header p { color: #97C459; font-size: 12px; margin-top: 4px; }
-  .content { padding: 16px; padding-bottom: 90px; margin-top: -12px; }
-  .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #eee; }
-  .card-label { font-size: 11px; color: #999; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-  .metric { background: #f8f9fa; border-radius: 8px; padding: 10px 12px; }
-  .metric-val { font-size: 18px; font-weight: 600; color: #1a1a1a; }
-  .metric-val.green { color: #27500A; }
-  .metric-val.amber { color: #633806; }
-  .metric-lbl { font-size: 10px; color: #999; margin-top: 2px; }
-  .job-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f5f5f5; cursor: pointer; }
-  .job-row:last-child { border-bottom: none; }
-  .job-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .job-dot.complete { background: #639922; }
-  .job-dot.in_progress { background: #378ADD; }
-  .job-dot.pending { background: #D3D1C7; }
-  .job-info { flex: 1; }
-  .job-name { font-size: 13px; font-weight: 600; color: #1a1a1a; }
-  .job-addr { font-size: 11px; color: #999; margin-top: 1px; }
-  .job-right { text-align: right; flex-shrink: 0; }
-  .job-price { font-size: 13px; font-weight: 600; color: #1a1a1a; }
-  .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; margin-top: 3px; }
-  .badge-green { background: #EAF3DE; color: #27500A; }
-  .badge-red { background: #FCEBEB; color: #A32D2D; }
-  .badge-amber { background: #FAEEDA; color: #633806; }
-  .badge-blue { background: #E6F1FB; color: #0C447C; }
-  .badge-grey { background: #f0f0f0; color: #999; }
-  .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; justify-content: center; }
-  .overlay.show { display: flex; }
-  .panel { background: white; border-radius: 20px 20px 0 0; padding: 24px 20px 40px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
-  .panel-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 20px; }
-  .panel-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-  .panel-addr { font-size: 13px; color: #666; margin-bottom: 4px; }
-  .panel-detail { font-size: 12px; color: #999; margin-bottom: 16px; }
-  .panel-info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
-  .panel-info-label { color: #999; }
-  .panel-info-value { font-weight: 600; }
-  .action-btn { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
-  .btn-start { background: #0C447C; color: white; }
-  .btn-end { background: #27500A; color: white; }
-  .btn-paid { background: #EAF3DE; color: #27500A; border: 1px solid #C0DD97; }
-  .btn-schedule { background: #27500A; color: white; }
-  .btn-close { background: #f5f5f5; color: #666; }
-  .confirm-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 200; align-items: center; justify-content: center; padding: 24px; }
-  .confirm-overlay.show { display: flex; }
-  .confirm-box { background: white; border-radius: 16px; padding: 24px; width: 100%; max-width: 340px; text-align: center; }
-  .confirm-icon { font-size: 40px; margin-bottom: 12px; }
-  .confirm-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
-  .confirm-sub { font-size: 13px; color: #666; margin-bottom: 20px; }
-  .confirm-btn { width: 100%; padding: 13px; border-radius: 8px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
-  .confirm-btn-yes { background: #27500A; color: white; }
-  .confirm-btn-no { background: #f5f5f5; color: #666; }
-  .date-section { margin-top: 4px; margin-bottom: 4px; }
-  .date-label { font-size: 12px; color: #999; margin-bottom: 6px; }
-  .date-input { width: 100%; padding: 11px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 10px; outline: none; }
-  .date-input:focus { border-color: #27500A; }
-  .gate-note { font-size: 11px; color: #633806; background: #FAEEDA; padding: 4px 8px; border-radius: 6px; margin-bottom: 12px; display: inline-block; }
-  .divider { height: 1px; background: #f0f0f0; margin: 12px 0; }
-  .empty-state { text-align: center; color: #999; font-size: 13px; padding: 20px 0; }
-  .nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; padding: 10px 0 20px; }
-  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #999; text-decoration: none; }
-  .nav-item.active { color: #27500A; }
-  .nav-icon { font-size: 20px; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #0a1628;
+  color: #e0ecf8;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* HEADER */
+.header {
+  background: #050d1a;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-title { font-size: 15px; font-weight: 700; color: #D4AA28; }
+.header-sub { font-size: 11px; color: #4a7aaa; margin-top: 2px; }
+.logout-btn {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #4a7aaa;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* NAV */
+.nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #050d1a;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0 20px;
+  z-index: 100;
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10px;
+  color: #2a5a8a;
+  cursor: pointer;
+  padding: 0 8px;
+  background: none;
+  border: none;
+}
+.nav-item.active { color: #D4AA28; }
+.nav-icon { font-size: 20px; margin-bottom: 3px; }
+
+/* TABS */
+.tab { display: none; padding: 16px; }
+.tab.active { display: block; }
+
+/* CARDS */
+.card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.card-label {
+  font-size: 11px;
+  color: #4a7aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+/* SUMMARY STATS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.stat-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 14px;
+  text-align: center;
+}
+.stat-value { font-size: 22px; font-weight: 700; color: #D4AA28; }
+.stat-label { font-size: 11px; color: #4a7aaa; margin-top: 4px; }
+
+/* JOB ROWS */
+.job-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.job-row:last-child { border-bottom: none; }
+.job-name { font-size: 14px; font-weight: 600; }
+.job-address { font-size: 12px; color: #4a7aaa; margin-top: 2px; }
+.job-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* BUTTONS */
+.btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-green { background: #27500A; color: white; }
+.btn-green:hover { background: #3B6D11; }
+.btn-gold { background: #D4AA28; color: #0a1628; }
+.btn-gold:hover { background: #c49b20; }
+.btn-red { background: rgba(163,45,45,0.3); color: #ff8a8a; border: 1px solid rgba(163,45,45,0.4); }
+.btn-outline { background: transparent; color: #4a7aaa; border: 1px solid rgba(255,255,255,0.1); }
+.btn-full { width: 100%; padding: 12px; font-size: 14px; margin-top: 8px; border-radius: 10px; }
+
+/* BADGE */
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.badge-green { background: rgba(100,180,100,0.12); color: #7dc87d; border: 1px solid rgba(100,180,100,0.2); }
+.badge-amber { background: rgba(212,170,40,0.12); color: #D4AA28; border: 1px solid rgba(212,170,40,0.2); }
+.badge-blue { background: rgba(74,122,170,0.15); color: #7aabdc; border: 1px solid rgba(74,122,170,0.25); }
+.badge-red { background: rgba(163,45,45,0.15); color: #ff8a8a; border: 1px solid rgba(163,45,45,0.25); }
+
+/* LOADER */
+.loader {
+  text-align: center;
+  padding: 40px 20px;
+  color: #4a7aaa;
+  font-size: 14px;
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(212,170,40,0.2);
+  border-top-color: #D4AA28;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ==================== CUSTOMERS TAB ==================== */
+.search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.search-input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #e0ecf8;
+  font-size: 14px;
+  outline: none;
+}
+.search-input::placeholder { color: #4a7aaa; }
+.search-input:focus { border-color: #D4AA28; }
+
+.customer-count {
+  font-size: 12px;
+  color: #4a7aaa;
+  margin-bottom: 10px;
+}
+
+.customer-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.customer-card:hover { border-color: rgba(212,170,40,0.3); }
+.customer-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.customer-card-name { font-size: 15px; font-weight: 700; }
+.customer-card-id { font-size: 11px; color: #4a7aaa; }
+.customer-card-address { font-size: 12px; color: #4a7aaa; margin-top: 4px; }
+.customer-card-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ADD CUSTOMER BUTTON */
+.add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(212,170,40,0.1);
+  border: 1px dashed rgba(212,170,40,0.4);
+  border-radius: 12px;
+  padding: 14px 16px;
+  width: 100%;
+  color: #D4AA28;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 14px;
+}
+.add-btn:hover { background: rgba(212,170,40,0.15); }
+
+/* MODAL / DETAIL PANEL */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(5,13,26,0.85);
+  z-index: 200;
+  align-items: flex-end;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #0f1e36;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle {
+  width: 36px; height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+.modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #D4AA28;
+  margin-bottom: 4px;
+}
+.modal-sub {
+  font-size: 12px;
+  color: #4a7aaa;
+  margin-bottom: 16px;
+}
+.modal-section {
+  margin-bottom: 16px;
+}
+.modal-section-label {
+  font-size: 11px;
+  color: #4a7aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 13px;
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { color: #4a7aaa; }
+.info-value { font-weight: 600; text-align: right; max-width: 55%; }
+
+/* EDIT FIELDS */
+.edit-field-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  gap: 10px;
+}
+.edit-field-row:last-child { border-bottom: none; }
+.edit-label { font-size: 13px; color: #4a7aaa; flex-shrink: 0; }
+.edit-input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: #e0ecf8;
+  font-size: 13px;
+  text-align: right;
+  outline: none;
+  width: 160px;
+}
+.edit-input:focus { border-color: #D4AA28; }
+
+/* ADD CUSTOMER FORM */
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 12px; color: #4a7aaa; margin-bottom: 6px; display: block; }
+.form-input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: #e0ecf8;
+  font-size: 14px;
+  outline: none;
+}
+.form-input:focus { border-color: #D4AA28; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.success-msg {
+  background: rgba(100,180,100,0.1);
+  border: 1px solid rgba(100,180,100,0.2);
+  color: #7dc87d;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 10px;
+  display: none;
+}
+.error-msg {
+  background: rgba(163,45,45,0.15);
+  border: 1px solid rgba(163,45,45,0.3);
+  color: #ff8a8a;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 10px;
+  display: none;
+}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>Rossington Window Cleaning — Owner Dashboard</h1>
-  <h2 id="header-date">Loading...</h2>
-  <p id="header-summary">Loading...</p>
+  <div>
+    <div class="header-title">Owner Dashboard</div>
+    <div class="header-sub" id="header-date">Rossington Window Cleaning</div>
+  </div>
+  <button class="logout-btn" onclick="logout()">Log out</button>
 </div>
 
-<div class="content">
-  <div style="margin-top:16px"></div>
+<!-- ==================== DASHBOARD TAB ==================== -->
+<div class="tab active" id="tab-dashboard">
+  <div id="dashboard-loader" class="loader"><div class="spinner"></div>Loading...</div>
+  <div id="dashboard-content" style="display:none;">
 
-  <div class="card">
-    <div class="card-label">Today's summary</div>
-    <div class="metrics">
-      <div class="metric"><div class="metric-val green" id="m-invoiced">£0</div><div class="metric-lbl">Invoiced today</div></div>
-      <div class="metric"><div class="metric-val green" id="m-paid">£0</div><div class="metric-lbl">Paid so far</div></div>
-      <div class="metric"><div class="metric-val amber" id="m-outstanding">£0</div><div class="metric-lbl">Outstanding</div></div>
-      <div class="metric"><div class="metric-val" id="m-done">0 of 0</div><div class="metric-lbl">Cleans done</div></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Today's jobs</div>
-    <div id="jobs-list"><div class="empty-state">Loading...</div></div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Scheduled this week</div>
-    <div id="upcoming-list"><div class="empty-state">Loading...</div></div>
-  </div>
-</div>
-
-<!-- CUSTOMER PANEL -->
-<div class="overlay" id="customer-overlay" onclick="closePanelOnBg(event)">
-  <div class="panel" id="customer-panel">
-    <div class="panel-handle"></div>
-    <div class="panel-name" id="panel-name">—</div>
-    <div class="panel-addr" id="panel-addr">—</div>
-    <div id="panel-gate"></div>
-    <div class="panel-detail" id="panel-detail">—</div>
-
-    <div class="panel-info-row"><span class="panel-info-label">Price</span><span class="panel-info-value" id="panel-price">—</span></div>
-    <div class="panel-info-row"><span class="panel-info-label">Balance</span><span class="panel-info-value" id="panel-balance">—</span></div>
-    <div class="panel-info-row"><span class="panel-info-label">Last clean</span><span class="panel-info-value" id="panel-last-clean">—</span></div>
-    <div class="panel-info-row"><span class="panel-info-label">Status</span><span class="panel-info-value" id="panel-status">—</span></div>
-
-    <div class="divider"></div>
-
-    <div class="date-section">
-      <div class="date-label">Set confirmed clean date (sends notification to customer)</div>
-      <input type="date" class="date-input" id="panel-date-input">
-      <button class="action-btn btn-schedule" onclick="saveDate()">Save confirmed date 📅</button>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-invoiced">£0</div>
+        <div class="stat-label">Invoiced today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-paid">£0</div>
+        <div class="stat-label">Paid so far</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-cleans">0</div>
+        <div class="stat-label">Cleans done</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-outstanding">£0</div>
+        <div class="stat-label">Outstanding</div>
+      </div>
     </div>
 
-    <div class="divider"></div>
+    <div class="card">
+      <div class="card-label">Today's jobs</div>
+      <div id="todays-jobs"><div style="color:#4a7aaa;font-size:13px;">No jobs scheduled for today</div></div>
+    </div>
 
-    <button class="action-btn btn-start" id="btn-start" onclick="startClean()">▶ Start clean</button>
-    <button class="action-btn btn-end" id="btn-end" onclick="endClean()" style="display:none">✅ End clean — notify customer</button>
-    <button class="action-btn btn-paid" id="btn-paid" onclick="showConfirmPaid()">💷 Mark as paid</button>
-    <button class="action-btn btn-close" onclick="closePanel()">Close</button>
+    <div class="card">
+      <div class="card-label">Scheduled this week</div>
+      <div id="weekly-jobs"><div style="color:#4a7aaa;font-size:13px;">No jobs scheduled this week</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Payment notifications</div>
+      <div id="payment-notifications"><div style="color:#4a7aaa;font-size:13px;">No pending payment notifications</div></div>
+    </div>
+
   </div>
 </div>
 
-<!-- CONFIRM PAID -->
-<div class="confirm-overlay" id="confirm-overlay">
-  <div class="confirm-box">
-    <div class="confirm-icon">💷</div>
-    <div class="confirm-title" id="confirm-title">Mark as paid?</div>
-    <div class="confirm-sub" id="confirm-sub">This will clear the balance and record the payment.</div>
-    <button class="confirm-btn confirm-btn-yes" onclick="confirmPaid()">Yes, mark as paid</button>
-    <button class="confirm-btn confirm-btn-no" onclick="closeConfirm()">Cancel</button>
+<!-- ==================== CUSTOMERS TAB ==================== -->
+<div class="tab" id="tab-customers">
+  <button class="add-btn" onclick="openAddCustomer()">
+    <span style="font-size:20px;">＋</span> Add new customer
+  </button>
+
+  <div class="search-bar">
+    <input class="search-input" id="customer-search" placeholder="🔍  Search by name or address..." oninput="filterCustomers()">
+  </div>
+  <div class="customer-count" id="customer-count"></div>
+
+  <div id="customers-loader" class="loader"><div class="spinner"></div>Loading customers...</div>
+  <div id="customers-list"></div>
+</div>
+
+<!-- ==================== SCHEDULE TAB ==================== -->
+<div class="tab" id="tab-schedule">
+  <div class="card">
+    <div class="card-label">Coming soon</div>
+    <div style="color:#4a7aaa;font-size:13px;">Schedule page — all upcoming confirmed dates in one view</div>
   </div>
 </div>
 
+<!-- ==================== ENQUIRIES TAB ==================== -->
+<div class="tab" id="tab-enquiries">
+  <div class="card">
+    <div class="card-label">Coming soon</div>
+    <div style="color:#4a7aaa;font-size:13px;">Enquiries page — handle new customer enquiries</div>
+  </div>
+</div>
+
+<!-- ==================== HMRC TAB ==================== -->
+<div class="tab" id="tab-hmrc">
+  <div class="card">
+    <div class="card-label">Coming soon</div>
+    <div style="color:#4a7aaa;font-size:13px;">HMRC page — income tracking</div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
 <nav class="nav">
-  <a href="owner-dashboard.html" class="nav-item active"><span class="nav-icon">📊</span><span>Dashboard</span></a>
-  <a href="#" class="nav-item"><span class="nav-icon">👥</span><span>Customers</span></a>
-  <a href="#" class="nav-item"><span class="nav-icon">📅</span><span>Schedule</span></a>
-  <a href="#" class="nav-item"><span class="nav-icon">📬</span><span>Enquiries</span></a>
-  <a href="#" class="nav-item"><span class="nav-icon">📋</span><span>HMRC</span></a>
+  <button class="nav-item active" id="nav-dashboard" onclick="showTab('dashboard')">
+    <span class="nav-icon">📊</span><span>Dashboard</span>
+  </button>
+  <button class="nav-item" id="nav-customers" onclick="showTab('customers')">
+    <span class="nav-icon">👥</span><span>Customers</span>
+  </button>
+  <button class="nav-item" id="nav-schedule" onclick="showTab('schedule')">
+    <span class="nav-icon">📅</span><span>Schedule</span>
+  </button>
+  <button class="nav-item" id="nav-enquiries" onclick="showTab('enquiries')">
+    <span class="nav-icon">📩</span><span>Enquiries</span>
+  </button>
+  <button class="nav-item" id="nav-hmrc" onclick="showTab('hmrc')">
+    <span class="nav-icon">💷</span><span>HMRC</span>
+  </button>
 </nav>
+
+<!-- ==================== CUSTOMER DETAIL MODAL ==================== -->
+<div class="modal-overlay" id="customer-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+      <div>
+        <div class="modal-title" id="modal-name"></div>
+        <div class="modal-sub" id="modal-id"></div>
+      </div>
+      <button class="btn btn-outline" onclick="closeModal('customer-modal')" style="font-size:18px;padding:4px 10px;">✕</button>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-label">Contact & Address</div>
+      <div class="info-row"><span class="info-label">Phone</span><span class="info-value" id="modal-phone"></span></div>
+      <div class="info-row"><span class="info-label">Email</span><span class="info-value" id="modal-email"></span></div>
+      <div class="info-row"><span class="info-label">Address</span><span class="info-value" id="modal-address"></span></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-label">Account</div>
+      <div class="info-row"><span class="info-label">Outstanding</span><span class="info-value" id="modal-balance" style="color:#ff8a8a;"></span></div>
+      <div class="info-row"><span class="info-label">Job status</span><span class="info-value" id="modal-status"></span></div>
+      <div class="info-row"><span class="info-label">Last clean</span><span class="info-value" id="modal-last-clean"></span></div>
+      <div class="info-row"><span class="info-label">Next confirmed</span><span class="info-value" id="modal-next-clean"></span></div>
+      <div class="info-row"><span class="info-label">Referrals</span><span class="info-value" id="modal-referrals"></span></div>
+      <div class="info-row"><span class="info-label">Gate strikes</span><span class="info-value" id="modal-gate-strikes"></span></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-label">Notes</div>
+      <div id="modal-notes" style="font-size:13px;color:#4a7aaa;padding:4px 0;"></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-label">Edit details</div>
+      <div class="edit-field-row">
+        <span class="edit-label">Price (£)</span>
+        <input class="edit-input" type="number" id="edit-price" placeholder="0.00">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Frequency</span>
+        <input class="edit-input" type="text" id="edit-frequency" placeholder="e.g. 4 weekly">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Next date</span>
+        <input class="edit-input" type="date" id="edit-next-date">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Balance (£)</span>
+        <input class="edit-input" type="number" id="edit-balance" placeholder="0.00">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Notes</span>
+        <input class="edit-input" type="text" id="edit-notes" placeholder="Any notes...">
+      </div>
+    </div>
+
+    <div id="edit-success" class="success-msg">✅ Customer updated successfully</div>
+    <div id="edit-error" class="error-msg">Something went wrong. Please try again.</div>
+
+    <button class="btn btn-gold btn-full" id="save-btn" onclick="saveCustomerEdits()">Save changes</button>
+    <button class="btn btn-red btn-full" style="margin-top:8px;" onclick="resetCustomerPassword()">Reset customer password</button>
+    <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="closeModal('customer-modal')">Close</button>
+  </div>
+</div>
+
+<!-- ==================== ADD CUSTOMER MODAL ==================== -->
+<div class="modal-overlay" id="add-customer-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title">Add new customer</div>
+      <button class="btn btn-outline" onclick="closeModal('add-customer-modal')" style="font-size:18px;padding:4px 10px;">✕</button>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">First name *</label>
+        <input class="form-input" id="new-firstname" placeholder="First name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last name *</label>
+        <input class="form-input" id="new-lastname" placeholder="Last name">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Address line 1 *</label>
+      <input class="form-input" id="new-address1" placeholder="House number and street">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Address line 2</label>
+      <input class="form-input" id="new-address2" placeholder="Village / area (optional)">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Town *</label>
+        <input class="form-input" id="new-town" placeholder="Town">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Postcode</label>
+        <input class="form-input" id="new-postcode" placeholder="DN11...">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mobile number *</label>
+      <input class="form-input" id="new-phone" type="tel" placeholder="07...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email (optional)</label>
+      <input class="form-input" id="new-email" type="email" placeholder="email@example.com">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Clean price (£) *</label>
+        <input class="form-input" id="new-price" type="number" placeholder="15">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Frequency *</label>
+        <input class="form-input" id="new-frequency" placeholder="4 weekly">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <input class="form-input" id="new-notes" placeholder="Gate code, dogs, access notes...">
+    </div>
+
+    <div id="add-success" class="success-msg"></div>
+    <div id="add-error" class="error-msg"></div>
+
+    <button class="btn btn-gold btn-full" id="add-btn" onclick="submitNewCustomer()">Add customer</button>
+    <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="closeModal('add-customer-modal')">Cancel</button>
+  </div>
+</div>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
-let allCustomers = [], todaysJobs = [], currentCustomer = null;
 
-async function init() {
-  const today = new Date();
-  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-  const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  document.getElementById('header-date').textContent = days[today.getDay()] + ' ' + today.getDate() + ' ' + months[today.getMonth()];
-  await loadAllCustomers();
+var allCustomers = [];
+var currentCustomer = null;
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', function() {
+  var d = new Date();
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('header-date').textContent = days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
+  loadDashboard();
+});
+
+function logout() {
+  window.location.href = 'owner-login.html';
 }
 
-async function loadAllCustomers() {
-  try {
-    const res = await fetch(API_URL + '?action=getAllCustomers');
-    const data = await res.json();
-    if (!data.success) { document.getElementById('jobs-list').innerHTML = '<div class="empty-state">Could not load customers</div>'; return; }
-    allCustomers = data.customers;
-    renderDashboard();
-  } catch (err) {
-    document.getElementById('jobs-list').innerHTML = '<div class="empty-state">Connection error</div>';
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+
+  if (name === 'customers' && allCustomers.length === 0) {
+    loadCustomers();
   }
 }
 
-function renderDashboard() {
-  const today = new Date().toISOString().split('T')[0];
-  const in7 = new Date(); in7.setDate(in7.getDate() + 7);
-  const in7str = in7.toISOString().split('T')[0];
-
-  todaysJobs = allCustomers.filter(c => c.next_clean_confirmed === today);
-  const upcoming = allCustomers.filter(c => c.next_clean_confirmed && c.next_clean_confirmed > today && c.next_clean_confirmed <= in7str);
-
-  let invoiced = 0, paid = 0, outstanding = 0, done = 0;
-  todaysJobs.forEach(c => {
-    const price = parseFloat(c.clean_price) || 0;
-    const bal = parseFloat(c.outstanding_balance) || 0;
-    invoiced += price;
-    if (bal <= 0) paid += price; else outstanding += bal;
-    if (c.job_status === 'complete') done++;
-  });
-
-  document.getElementById('m-invoiced').textContent = '£' + invoiced.toFixed(2);
-  document.getElementById('m-paid').textContent = '£' + paid.toFixed(2);
-  document.getElementById('m-outstanding').textContent = '£' + outstanding.toFixed(2);
-  document.getElementById('m-done').textContent = done + ' of ' + todaysJobs.length;
-  document.getElementById('header-summary').textContent = todaysJobs.length + ' jobs scheduled today';
-
-  const jobsList = document.getElementById('jobs-list');
-  jobsList.innerHTML = todaysJobs.length === 0
-    ? '<div class="empty-state">No jobs today — set confirmed dates in Schedule</div>'
-    : todaysJobs.map((c, i) => {
-        const status = c.job_status || 'pending';
-        const dotClass = ['complete','in_progress'].includes(status) ? status : 'pending';
-        const bal = parseFloat(c.outstanding_balance) || 0;
-        const payBadge = bal > 0 ? `<span class="badge badge-red">Owes £${bal.toFixed(2)}</span>` : `<span class="badge badge-green">Paid</span>`;
-        const statusBadge = status === 'complete' ? `<span class="badge badge-green">Done ✅</span>` : status === 'in_progress' ? `<span class="badge badge-blue">In progress</span>` : `<span class="badge badge-grey">Pending</span>`;
-        return `<div class="job-row" onclick="openPanel(${i},'today')">
-          <div class="job-dot ${dotClass}"></div>
-          <div class="job-info"><div class="job-name">${c.first_name} ${c.last_name}</div><div class="job-addr">${c.address}</div></div>
-          <div class="job-right"><div class="job-price">£${parseFloat(c.clean_price||0).toFixed(2)}</div>${statusBadge}</div>
-        </div>`;
-      }).join('');
-
-  const upcomingList = document.getElementById('upcoming-list');
-  upcomingList.innerHTML = upcoming.length === 0
-    ? '<div class="empty-state">No other cleans scheduled this week</div>'
-    : upcoming.map(c => {
-        const idx = allCustomers.indexOf(c);
-        return `<div class="job-row" onclick="openPanel(${idx},'all')">
-          <div class="job-dot pending"></div>
-          <div class="job-info"><div class="job-name">${c.first_name} ${c.last_name}</div><div class="job-addr">${formatDate(c.next_clean_confirmed)}</div></div>
-          <div class="job-right"><div class="job-price">£${parseFloat(c.clean_price||0).toFixed(2)}</div><span class="badge badge-blue">Scheduled</span></div>
-        </div>`;
-      }).join('');
-}
-
-function openPanel(index, source) {
-  currentCustomer = source === 'today' ? todaysJobs[index] : allCustomers[index];
-  const c = currentCustomer;
-  const status = c.job_status || 'none';
-  const bal = parseFloat(c.outstanding_balance) || 0;
-
-  document.getElementById('panel-name').textContent = c.first_name + ' ' + c.last_name;
-  document.getElementById('panel-addr').textContent = c.address;
-  document.getElementById('panel-detail').textContent = 'Phone: ' + (c.phone || '—') + '  ·  ' + (c.clean_frequency || 'Regular') + ' clean';
-  document.getElementById('panel-price').textContent = '£' + parseFloat(c.clean_price||0).toFixed(2);
-  document.getElementById('panel-last-clean').textContent = formatDate(c.last_clean) || 'Not recorded';
-  document.getElementById('panel-status').textContent = getStatusLabel(status);
-  document.getElementById('panel-date-input').value = c.next_clean_confirmed || '';
-
-  const balEl = document.getElementById('panel-balance');
-  balEl.textContent = bal > 0 ? '£' + bal.toFixed(2) + ' outstanding' : 'All paid ✅';
-  balEl.style.color = bal > 0 ? '#A32D2D' : '#27500A';
-
-  const gateEl = document.getElementById('panel-gate');
-  gateEl.innerHTML = c.gate_access ? '<span class="gate-note">🔒 Gate access required</span>' : '';
-
-  document.getElementById('btn-start').style.display = (status === 'in_progress' || status === 'complete') ? 'none' : 'block';
-  document.getElementById('btn-start').textContent = '▶ Start clean';
-  document.getElementById('btn-end').style.display = status === 'in_progress' ? 'block' : 'none';
-  document.getElementById('btn-end').textContent = '✅ End clean — notify customer';
-  document.getElementById('btn-paid').style.display = bal > 0 ? 'block' : 'none';
-
-  // Show date picker only for non-today customers
-  const isToday = source === 'today';
-  document.querySelector('.date-section').style.display = isToday ? 'none' : 'block';
-  document.querySelector('.date-section').previousElementSibling.style.display = isToday ? 'none' : 'block';
-
-  document.getElementById('customer-overlay').classList.add('show');
-}
-
-function closePanel() { document.getElementById('customer-overlay').classList.remove('show'); currentCustomer = null; }
-function closePanelOnBg(e) { if (e.target === document.getElementById('customer-overlay')) closePanel(); }
-
-async function startClean() {
-  if (!currentCustomer) return;
-  document.getElementById('btn-start').textContent = 'Starting...';
-  try {
-    await apiPost({ action: 'updateJobStatus', customer_id: currentCustomer.id, status: 'in_progress' });
-    currentCustomer.job_status = 'in_progress';
-    document.getElementById('panel-status').textContent = getStatusLabel('in_progress');
-    document.getElementById('btn-start').style.display = 'none';
-    document.getElementById('btn-end').style.display = 'block';
-    renderDashboard();
-  } catch(e) { alert('Could not update — check connection'); document.getElementById('btn-start').textContent = '▶ Start clean'; }
-}
-
-async function endClean() {
-  if (!currentCustomer) return;
-  document.getElementById('btn-end').textContent = 'Saving...';
-  try {
-    await apiPost({ action: 'updateJobStatus', customer_id: currentCustomer.id, status: 'complete' });
-    currentCustomer.job_status = 'complete';
-    document.getElementById('panel-status').textContent = getStatusLabel('complete');
-    document.getElementById('btn-end').style.display = 'none';
-    document.getElementById('btn-start').style.display = 'none';
-    renderDashboard();
-  } catch(e) { alert('Could not update — check connection'); document.getElementById('btn-end').textContent = '✅ End clean — notify customer'; }
-}
-
-async function saveDate() {
-  if (!currentCustomer) return;
-  const dateVal = document.getElementById('panel-date-input').value;
-  if (!dateVal) { alert('Please select a date first'); return; }
-  const btn = document.querySelector('.btn-schedule');
-  btn.textContent = 'Saving...';
-  try {
-    await apiPost({ action: 'setConfirmedDate', customer_id: currentCustomer.id, date: dateVal });
-    currentCustomer.next_clean_confirmed = dateVal;
-    btn.textContent = 'Date saved ✅';
-    setTimeout(() => { btn.textContent = 'Save confirmed date 📅'; }, 2000);
-    renderDashboard();
-  } catch(e) { alert('Could not save date'); btn.textContent = 'Save confirmed date 📅'; }
-}
-
-function showConfirmPaid() {
-  if (!currentCustomer) return;
-  const bal = parseFloat(currentCustomer.outstanding_balance) || 0;
-  document.getElementById('confirm-title').textContent = 'Mark ' + currentCustomer.first_name + ' as paid?';
-  document.getElementById('confirm-sub').textContent = '£' + bal.toFixed(2) + ' will be cleared and recorded.';
-  document.getElementById('confirm-overlay').classList.add('show');
-}
-
-async function confirmPaid() {
-  closeConfirm();
-  if (!currentCustomer) return;
-  try {
-    const amount = parseFloat(currentCustomer.outstanding_balance) || 0;
-    await apiPost({ action: 'markPaid', customer_id: currentCustomer.id, amount: amount });
-    currentCustomer.outstanding_balance = 0;
-    document.getElementById('panel-balance').textContent = 'All paid ✅';
-    document.getElementById('panel-balance').style.color = '#27500A';
-    document.getElementById('btn-paid').style.display = 'none';
-    renderDashboard();
-  } catch(e) { alert('Could not mark as paid'); }
-}
-
-function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('show'); }
-
-async function apiPost(body) {
-  const res = await fetch(API_URL, { method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) });
+// ============================================================
+// API HELPERS
+// ============================================================
+async function apiGet(params) {
+  var url = API_URL + '?' + new URLSearchParams(params).toString();
+  var res = await fetch(url);
   return res.json();
 }
 
+async function apiPost(body) {
+  var res = await fetch(API_URL, {
+    method: 'POST',
+    mode: 'cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard() {
+  try {
+    var data = await apiGet({ action: 'getOwnerSummary' });
+    document.getElementById('dashboard-loader').style.display = 'none';
+    document.getElementById('dashboard-content').style.display = 'block';
+
+    if (data.success) {
+      document.getElementById('stat-invoiced').textContent = '£' + (data.invoiced_today || 0).toFixed(2);
+      document.getElementById('stat-paid').textContent = '£' + (data.paid_today || 0).toFixed(2);
+      document.getElementById('stat-cleans').textContent = data.cleans_done || 0;
+      document.getElementById('stat-outstanding').textContent = '£' + (data.total_outstanding || 0).toFixed(2);
+
+      renderTodaysJobs(data.todays_jobs || []);
+      renderWeeklyJobs(data.weekly_jobs || []);
+      renderPaymentNotifications(data.payment_notifications || []);
+    }
+  } catch(e) {
+    document.getElementById('dashboard-loader').innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Failed to load. Check your connection.</div>';
+  }
+}
+
+function renderTodaysJobs(jobs) {
+  var el = document.getElementById('todays-jobs');
+  if (!jobs.length) { el.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No jobs scheduled for today</div>'; return; }
+  el.innerHTML = jobs.map(function(j) {
+    return '<div class="job-row">' +
+      '<div><div class="job-name">' + j.first_name + ' ' + j.last_name + '</div>' +
+      '<div class="job-address">' + j.address_line_1 + '</div></div>' +
+      '<div class="job-actions">' + jobButtons(j) + '</div></div>';
+  }).join('');
+}
+
+function renderWeeklyJobs(jobs) {
+  var el = document.getElementById('weekly-jobs');
+  if (!jobs.length) { el.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No jobs scheduled this week</div>'; return; }
+  el.innerHTML = jobs.map(function(j) {
+    return '<div class="job-row">' +
+      '<div><div class="job-name">' + j.first_name + ' ' + j.last_name + '</div>' +
+      '<div class="job-address">' + formatDate(j.next_clean_confirmed) + ' · ' + j.address_line_1 + '</div></div>' +
+      '<div>' + statusBadge(j.job_status) + '</div></div>';
+  }).join('');
+}
+
+function renderPaymentNotifications(notifications) {
+  var el = document.getElementById('payment-notifications');
+  if (!notifications.length) { el.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No pending payment notifications</div>'; return; }
+  el.innerHTML = notifications.map(function(n) {
+    return '<div class="job-row">' +
+      '<div><div class="job-name">' + n.first_name + ' ' + n.last_name + '</div>' +
+      '<div class="job-address">Says they\'ve paid £' + parseFloat(n.outstanding_balance).toFixed(2) + '</div></div>' +
+      '<button class="btn btn-green" onclick="markPaid(\'' + n.customer_id + '\', this)">Mark paid</button>' +
+      '</div>';
+  }).join('');
+}
+
+function jobButtons(j) {
+  var status = j.job_status;
+  var id = j.customer_id;
+  if (status === 'not_scheduled' || status === 'none' || !status) {
+    return '<button class="btn btn-green" onclick="updateStatus(\'' + id + '\',\'on_the_way\',this)">On the way</button>';
+  }
+  if (status === 'on_the_way') {
+    return '<button class="btn btn-gold" onclick="updateStatus(\'' + id + '\',\'in_progress\',this)">Start clean</button>';
+  }
+  if (status === 'in_progress') {
+    return '<button class="btn btn-gold" onclick="updateStatus(\'' + id + '\',\'complete\',this)">End clean</button>';
+  }
+  if (status === 'complete') {
+    return '<span class="badge badge-green">Complete</span>';
+  }
+  return '';
+}
+
+async function updateStatus(customerId, newStatus, btn) {
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    var result = await apiPost({ action: 'updateJobStatus', customer_id: customerId, status: newStatus });
+    if (result.success) { loadDashboard(); }
+    else { btn.disabled = false; btn.textContent = 'Retry'; }
+  } catch(e) { btn.disabled = false; btn.textContent = 'Error'; }
+}
+
+async function markPaid(customerId, btn) {
+  btn.disabled = true;
+  btn.textContent = '...';
+  try {
+    var result = await apiPost({ action: 'markPaid', customer_id: customerId });
+    if (result.success) { loadDashboard(); }
+    else { btn.disabled = false; btn.textContent = 'Retry'; }
+  } catch(e) { btn.disabled = false; btn.textContent = 'Error'; }
+}
+
+// ============================================================
+// CUSTOMERS
+// ============================================================
+async function loadCustomers() {
+  document.getElementById('customers-loader').style.display = 'block';
+  document.getElementById('customers-list').innerHTML = '';
+  try {
+    var data = await apiGet({ action: 'getAllCustomers' });
+    document.getElementById('customers-loader').style.display = 'none';
+    if (data.success && data.customers) {
+      allCustomers = data.customers;
+      renderCustomerList(allCustomers);
+    } else {
+      document.getElementById('customers-list').innerHTML = '<div style="color:#ff8a8a;font-size:13px;padding:20px 0;">Failed to load customers.</div>';
+    }
+  } catch(e) {
+    document.getElementById('customers-loader').style.display = 'none';
+    document.getElementById('customers-list').innerHTML = '<div style="color:#ff8a8a;font-size:13px;padding:20px 0;">Connection error.</div>';
+  }
+}
+
+function renderCustomerList(customers) {
+  var el = document.getElementById('customers-list');
+  document.getElementById('customer-count').textContent = customers.length + ' customer' + (customers.length !== 1 ? 's' : '');
+
+  if (!customers.length) {
+    el.innerHTML = '<div style="color:#4a7aaa;font-size:13px;padding:20px 0;">No customers found.</div>';
+    return;
+  }
+
+  el.innerHTML = customers.map(function(c) {
+    var balance = parseFloat(c.outstanding_balance) || 0;
+    var balanceBadge = balance > 0
+      ? '<span class="badge badge-red">£' + balance.toFixed(2) + ' owed</span>'
+      : '<span class="badge badge-green">Paid up</span>';
+    var statusB = statusBadge(c.job_status);
+    var nextClean = c.next_clean_confirmed ? '<span class="badge badge-blue">' + formatDate(c.next_clean_confirmed) + '</span>' : '';
+
+    return '<div class="customer-card" onclick="openCustomer(\'' + c.customer_id + '\')">' +
+      '<div class="customer-card-top">' +
+      '<div><div class="customer-card-name">' + c.first_name + ' ' + c.last_name + '</div>' +
+      '<div class="customer-card-id">ID: ' + c.customer_id + '</div></div>' +
+      '<div>' + balanceBadge + '</div>' +
+      '</div>' +
+      '<div class="customer-card-address">📍 ' + c.address_line_1 + (c.address_line_2 ? ', ' + c.address_line_2 : '') + ', ' + (c.town || '') + '</div>' +
+      '<div class="customer-card-meta">' + statusB + nextClean +
+      '<span style="font-size:11px;color:#4a7aaa;">£' + (parseFloat(c.regular_clean_price)||0).toFixed(2) + ' · ' + (c.clean_frequency||'') + '</span>' +
+      '</div></div>';
+  }).join('');
+}
+
+function filterCustomers() {
+  var q = document.getElementById('customer-search').value.toLowerCase().trim();
+  if (!q) { renderCustomerList(allCustomers); return; }
+  var filtered = allCustomers.filter(function(c) {
+    return (c.first_name + ' ' + c.last_name).toLowerCase().includes(q) ||
+      (c.address_line_1 || '').toLowerCase().includes(q) ||
+      (c.address_line_2 || '').toLowerCase().includes(q) ||
+      (c.town || '').toLowerCase().includes(q) ||
+      (c.postcode || '').toLowerCase().includes(q);
+  });
+  renderCustomerList(filtered);
+}
+
+function openCustomer(customerId) {
+  var c = allCustomers.find(function(x) { return x.customer_id == customerId; });
+  if (!c) return;
+  currentCustomer = c;
+
+  document.getElementById('modal-name').textContent = c.first_name + ' ' + c.last_name;
+  document.getElementById('modal-id').textContent = 'Customer ID: ' + c.customer_id + ' · Joined: ' + (formatDate(c.date_joined) || 'Unknown');
+  document.getElementById('modal-phone').textContent = c.contact_number || '—';
+  document.getElementById('modal-email').textContent = c.email || '—';
+  document.getElementById('modal-address').textContent = [c.address_line_1, c.address_line_2, c.town, c.postcode].filter(Boolean).join(', ');
+
+  var balance = parseFloat(c.outstanding_balance) || 0;
+  document.getElementById('modal-balance').textContent = balance > 0 ? '£' + balance.toFixed(2) : 'None';
+  document.getElementById('modal-balance').style.color = balance > 0 ? '#ff8a8a' : '#7dc87d';
+  document.getElementById('modal-status').textContent = formatStatus(c.job_status);
+  document.getElementById('modal-last-clean').textContent = formatDate(c.first_clean_completed) || '—';
+  document.getElementById('modal-next-clean').textContent = formatDate(c.next_clean_confirmed) || 'Not set';
+  document.getElementById('modal-referrals').textContent = c.referral_count || '0';
+  document.getElementById('modal-gate-strikes').textContent = c.gate_strike_count || '0';
+  document.getElementById('modal-notes').textContent = c.notes || 'No notes';
+
+  document.getElementById('edit-price').value = c.regular_clean_price || '';
+  document.getElementById('edit-frequency').value = c.clean_frequency || '';
+  document.getElementById('edit-next-date').value = c.next_clean_confirmed ? c.next_clean_confirmed.substring(0,10) : '';
+  document.getElementById('edit-balance').value = c.outstanding_balance || '';
+  document.getElementById('edit-notes').value = c.notes || '';
+
+  document.getElementById('edit-success').style.display = 'none';
+  document.getElementById('edit-error').style.display = 'none';
+
+  document.getElementById('customer-modal').classList.add('open');
+}
+
+async function saveCustomerEdits() {
+  var btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  document.getElementById('edit-success').style.display = 'none';
+  document.getElementById('edit-error').style.display = 'none';
+
+  try {
+    var result = await apiPost({
+      action: 'updateCustomer',
+      customer_id: currentCustomer.customer_id,
+      regular_clean_price: document.getElementById('edit-price').value,
+      clean_frequency: document.getElementById('edit-frequency').value,
+      next_clean_confirmed: document.getElementById('edit-next-date').value,
+      outstanding_balance: document.getElementById('edit-balance').value,
+      notes: document.getElementById('edit-notes').value
+    });
+
+    if (result.success) {
+      document.getElementById('edit-success').style.display = 'block';
+      // Update local copy
+      var idx = allCustomers.findIndex(function(x) { return x.customer_id == currentCustomer.customer_id; });
+      if (idx > -1) {
+        allCustomers[idx].regular_clean_price = document.getElementById('edit-price').value;
+        allCustomers[idx].clean_frequency = document.getElementById('edit-frequency').value;
+        allCustomers[idx].next_clean_confirmed = document.getElementById('edit-next-date').value;
+        allCustomers[idx].outstanding_balance = document.getElementById('edit-balance').value;
+        allCustomers[idx].notes = document.getElementById('edit-notes').value;
+        renderCustomerList(allCustomers);
+      }
+    } else {
+      document.getElementById('edit-error').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('edit-error').style.display = 'block';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Save changes';
+}
+
+async function resetCustomerPassword() {
+  if (!confirm('Reset password for ' + currentCustomer.first_name + '? They will be asked to set a new one at next login.')) return;
+  try {
+    var result = await apiPost({ action: 'resetPassword', customer_id: currentCustomer.customer_id });
+    if (result.success) { alert('Password reset. They will be prompted to create a new one next time they log in.'); }
+    else { alert('Something went wrong. Please try again.'); }
+  } catch(e) { alert('Connection error.'); }
+}
+
+// ADD NEW CUSTOMER
+function openAddCustomer() {
+  ['new-firstname','new-lastname','new-address1','new-address2','new-town','new-postcode','new-phone','new-email','new-price','new-frequency','new-notes'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('add-success').style.display = 'none';
+  document.getElementById('add-error').style.display = 'none';
+  document.getElementById('add-customer-modal').classList.add('open');
+}
+
+async function submitNewCustomer() {
+  var btn = document.getElementById('add-btn');
+  var firstName = document.getElementById('new-firstname').value.trim();
+  var lastName = document.getElementById('new-lastname').value.trim();
+  var address1 = document.getElementById('new-address1').value.trim();
+  var town = document.getElementById('new-town').value.trim();
+  var phone = document.getElementById('new-phone').value.trim();
+  var price = document.getElementById('new-price').value.trim();
+  var frequency = document.getElementById('new-frequency').value.trim();
+
+  document.getElementById('add-success').style.display = 'none';
+  document.getElementById('add-error').style.display = 'none';
+
+  if (!firstName || !lastName || !address1 || !town || !phone || !price || !frequency) {
+    document.getElementById('add-error').textContent = 'Please fill in all required fields.';
+    document.getElementById('add-error').style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+
+  try {
+    var result = await apiPost({
+      action: 'addCustomer',
+      first_name: firstName,
+      last_name: lastName,
+      address_line_1: address1,
+      address_line_2: document.getElementById('new-address2').value.trim(),
+      town: town,
+      postcode: document.getElementById('new-postcode').value.trim(),
+      contact_number: phone,
+      email: document.getElementById('new-email').value.trim(),
+      regular_clean_price: price,
+      clean_frequency: frequency,
+      notes: document.getElementById('new-notes').value.trim()
+    });
+
+    if (result.success) {
+      document.getElementById('add-success').textContent = '✅ ' + firstName + ' ' + lastName + ' added! Customer ID: ' + result.customer_id;
+      document.getElementById('add-success').style.display = 'block';
+      btn.textContent = 'Added!';
+      // Reload customer list
+      allCustomers = [];
+      loadCustomers();
+    } else {
+      document.getElementById('add-error').textContent = result.error || 'Something went wrong. Please try again.';
+      document.getElementById('add-error').style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Add customer';
+    }
+  } catch(e) {
+    document.getElementById('add-error').textContent = 'Connection error. Please try again.';
+    document.getElementById('add-error').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Add customer';
+  }
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+// Close on overlay tap
+document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ============================================================
+// HELPERS
+// ============================================================
 function formatDate(str) {
   if (!str) return null;
-  const d = new Date(str);
-  const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const day = d.getDate();
-  const suffix = [11,12,13].includes(day) ? 'th' : (['st','nd','rd'][(day%10)-1] || 'th');
-  return days[d.getDay()] + ' ' + day + suffix + ' ' + months[d.getMonth()];
+  var d = new Date(str);
+  if (isNaN(d.getTime())) return null;
+  var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
 }
 
-function getStatusLabel(status) {
-  return { none:'Not started', not_scheduled:'Not scheduled', on_the_way:'On the way', next:'Next job', in_progress:'In progress 🔵', complete:'Complete ✅' }[status] || status;
+function formatStatus(s) {
+  var map = {
+    'not_scheduled': 'Not scheduled',
+    'none': 'Not scheduled',
+    'on_the_way': 'On the way',
+    'next': "You're next",
+    'in_progress': 'In progress',
+    'complete': 'Complete'
+  };
+  return map[s] || s || 'Not scheduled';
 }
 
-init();
+function statusBadge(s) {
+  if (s === 'complete') return '<span class="badge badge-green">Complete</span>';
+  if (s === 'in_progress') return '<span class="badge badge-amber">In progress</span>';
+  if (s === 'on_the_way') return '<span class="badge badge-amber">On the way</span>';
+  return '';
+}
 </script>
 </body>
 </html>
