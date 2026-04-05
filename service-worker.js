@@ -1,7 +1,7 @@
 // ============================================================
 // service-worker.js — Rossington Window Cleaning PWA
 // ============================================================
-// v23 — Network first strategy
+// v26 — Network first strategy
 // Always tries to get fresh files from server first
 // Falls back to cache only if offline
 // ============================================================
@@ -57,7 +57,7 @@ self.addEventListener('notificationclick', function(event) {
 // PWA Caching
 // ============================================================
 
-const CACHE_NAME = 'rwc-v28';
+const CACHE_NAME = 'rwc-v26';
 const APP_SHELL = [
   './home.html',
   './payments.html',
