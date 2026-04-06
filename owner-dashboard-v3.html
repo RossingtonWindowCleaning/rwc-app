@@ -420,9 +420,32 @@ body {
 
 <!-- ==================== SCHEDULE TAB ==================== -->
 <div class="tab" id="tab-schedule">
+  <div class="card" style="padding:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <button class="btn btn-outline" onclick="changeMonth(-1)" style="padding:6px 12px;font-size:16px;">&#8249;</button>
+      <div style="font-size:15px;font-weight:700;color:#D4AA28;" id="cal-month-title"></div>
+      <button class="btn btn-outline" onclick="changeMonth(1)" style="padding:6px 12px;font-size:16px;">&#8250;</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px;">
+      <div style="text-align:center;font-size:10px;color:#4a7aaa;padding:4px 0;">M</div>
+      <div style="text-align:center;font-size:10px;color:#4a7aaa;padding:4px 0;">T</div>
+      <div style="text-align:center;font-size:10px;color:#4a7aaa;padding:4px 0;">W</div>
+      <div style="text-align:center;font-size:10px;color:#4a7aaa;padding:4px 0;">T</div>
+      <div style="text-align:center;font-size:10px;color:#4a7aaa;padding:4px 0;">F</div>
+      <div style="text-align:center;font-size:10px;color:#4a7aaa;padding:4px 0;">S</div>
+      <div style="text-align:center;font-size:10px;color:#4a7aaa;padding:4px 0;">S</div>
+    </div>
+    <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
+  </div>
+
+  <div class="card" id="cal-day-card" style="display:none;">
+    <div class="card-label" id="cal-day-title"></div>
+    <div id="cal-day-jobs"></div>
+  </div>
+
   <div class="card">
-    <div class="card-label">Coming soon</div>
-    <div style="color:#4a7aaa;font-size:13px;">Schedule page — all upcoming confirmed dates in one view</div>
+    <div class="card-label">All upcoming confirmed cleans</div>
+    <div id="schedule-list"></div>
   </div>
 </div>
 
@@ -493,6 +516,16 @@ body {
     <div class="modal-section">
       <div class="modal-section-label">Notes</div>
       <div id="modal-notes" style="font-size:13px;color:#4a7aaa;padding:4px 0;"></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-label">Clean history</div>
+      <div id="modal-clean-history"><div style="color:#4a7aaa;font-size:13px;">Loading...</div></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-label">Payment history</div>
+      <div id="modal-payment-history"><div style="color:#4a7aaa;font-size:13px;">Loading...</div></div>
     </div>
 
     <div class="modal-section">
@@ -661,6 +694,9 @@ function showTab(name) {
 
   if (name === 'customers' && allCustomers.length === 0) {
     loadCustomers();
+  }
+  if (name === 'schedule') {
+    loadSchedule();
   }
 }
 
@@ -889,6 +925,43 @@ function openCustomer(customerId) {
   document.getElementById('edit-error').style.display = 'none';
 
   document.getElementById('customer-modal').classList.add('open');
+  loadCustomerHistory(c.customer_id);
+}
+
+async function loadCustomerHistory(customerId) {
+  document.getElementById('modal-clean-history').innerHTML = '<div style="color:#4a7aaa;font-size:13px;">Loading...</div>';
+  document.getElementById('modal-payment-history').innerHTML = '<div style="color:#4a7aaa;font-size:13px;">Loading...</div>';
+  try {
+    var cleanData = await apiGet({ action: 'getCleanHistory', customer_id: customerId });
+    var cleanEl = document.getElementById('modal-clean-history');
+    if (cleanData.success && cleanData.history.length) {
+      cleanEl.innerHTML = cleanData.history.map(function(h) {
+        return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;">' +
+          '<span style="color:#4a7aaa;">' + (formatDate(h.date) || h.date) + '</span>' +
+          '<span style="color:#7dc87d;font-weight:600;">&#163;' + parseFloat(h.price||0).toFixed(2) + '</span></div>';
+      }).join('');
+    } else {
+      cleanEl.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No clean history yet</div>';
+    }
+  } catch(e) {
+    document.getElementById('modal-clean-history').innerHTML = '<div style="color:#4a7aaa;font-size:13px;">Could not load</div>';
+  }
+  try {
+    var payData = await apiGet({ action: 'getPaymentHistory', customer_id: customerId });
+    var payEl = document.getElementById('modal-payment-history');
+    if (payData.success && payData.history.length) {
+      payEl.innerHTML = payData.history.map(function(h) {
+        return '<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;">' +
+          '<div><span style="color:#4a7aaa;">' + (formatDate(h.date) || h.date) + '</span>' +
+          '<span style="color:#4a7aaa;margin-left:8px;font-size:11px;">' + (h.method||'') + '</span></div>' +
+          '<span style="color:#D4AA28;font-weight:600;">&#163;' + parseFloat(h.amount||0).toFixed(2) + '</span></div>';
+      }).join('');
+    } else {
+      payEl.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No payment history yet</div>';
+    }
+  } catch(e) {
+    document.getElementById('modal-payment-history').innerHTML = '<div style="color:#4a7aaa;font-size:13px;">Could not load</div>';
+  }
 }
 
 async function saveCustomerEdits() {
@@ -1092,6 +1165,149 @@ function statusBadge(s) {
   if (s === 'in_progress') return '<span class="badge badge-amber">In progress</span>';
   if (s === 'on_the_way') return '<span class="badge badge-amber">On the way</span>';
   return '';
+}
+
+var calYear = new Date().getFullYear();
+var calMonth = new Date().getMonth();
+var scheduleCustomers = [];
+
+function loadSchedule() {
+  if (allCustomers.length > 0) {
+    scheduleCustomers = allCustomers;
+    renderCalendar();
+    renderScheduleList();
+    return;
+  }
+  apiGet({ action: 'getAllCustomers' }).then(function(data) {
+    if (data.success) {
+      scheduleCustomers = data.customers;
+      renderCalendar();
+      renderScheduleList();
+    }
+  });
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  document.getElementById('cal-day-card').style.display = 'none';
+  renderCalendar();
+}
+
+function getJobsForDate(dateStr) {
+  return scheduleCustomers.filter(function(c) {
+    return c.next_clean_confirmed && c.next_clean_confirmed.substring(0, 10) === dateStr;
+  });
+}
+
+function renderCalendar() {
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-title').textContent = months[calMonth] + ' ' + calYear;
+  var grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  var firstDay = new Date(calYear, calMonth, 1).getDay();
+  var daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  var startOffset = firstDay === 0 ? 6 : firstDay - 1;
+  var today = new Date().toISOString().substring(0, 10);
+  for (var i = 0; i < startOffset; i++) {
+    var empty = document.createElement('div');
+    grid.appendChild(empty);
+  }
+  for (var d = 1; d <= daysInMonth; d++) {
+    var dateStr = calYear + '-' + String(calMonth + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    var jobs = getJobsForDate(dateStr);
+    var cell = document.createElement('div');
+    cell.style.cssText = 'text-align:center;padding:6px 2px;border-radius:8px;font-size:12px;cursor:pointer;position:relative;';
+    if (dateStr === today) {
+      cell.style.background = 'rgba(212,170,40,0.15)';
+      cell.style.color = '#D4AA28';
+      cell.style.fontWeight = '700';
+    } else {
+      cell.style.background = 'rgba(255,255,255,0.04)';
+      cell.style.color = '#e0ecf8';
+    }
+    cell.textContent = d;
+    if (jobs.length > 0) {
+      var dot = document.createElement('div');
+      dot.style.cssText = 'width:5px;height:5px;border-radius:50%;background:#D4AA28;margin:2px auto 0;';
+      cell.appendChild(dot);
+      cell.style.background = 'rgba(212,170,40,0.12)';
+      cell.style.color = '#D4AA28';
+      cell.style.fontWeight = '600';
+    }
+    cell.onclick = (function(ds, js) {
+      return function() { showDayJobs(ds, js); };
+    })(dateStr, jobs);
+    grid.appendChild(cell);
+  }
+}
+
+function showDayJobs(dateStr, jobs) {
+  var card = document.getElementById('cal-day-card');
+  var title = document.getElementById('cal-day-title');
+  var list = document.getElementById('cal-day-jobs');
+  var d = new Date(dateStr + 'T12:00:00');
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  title.textContent = days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
+  if (!jobs.length) {
+    list.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No confirmed cleans on this date</div>';
+  } else {
+    list.innerHTML = jobs.map(function(c) {
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
+        '<div><div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
+        '<div style="font-size:12px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div></div>' +
+        '<span style="font-size:12px;color:#D4AA28;font-weight:600;">&#163;' + parseFloat(c.regular_clean_price || 0).toFixed(2) + '</span>' +
+        '</div>';
+    }).join('');
+  }
+  card.style.display = 'block';
+}
+
+function renderScheduleList() {
+  var el = document.getElementById('schedule-list');
+  var today = new Date().toISOString().substring(0, 10);
+  var upcoming = scheduleCustomers.filter(function(c) {
+    return c.next_clean_confirmed && c.next_clean_confirmed.substring(0, 10) >= today;
+  }).sort(function(a, b) {
+    return a.next_clean_confirmed > b.next_clean_confirmed ? 1 : -1;
+  });
+  var noDate = scheduleCustomers.filter(function(c) {
+    return !c.next_clean_confirmed || c.next_clean_confirmed.substring(0, 10) < today;
+  });
+  if (!upcoming.length && !noDate.length) {
+    el.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No customers found</div>';
+    return;
+  }
+  var html = '';
+  if (upcoming.length) {
+    html += upcoming.map(function(c) {
+      var d = new Date(c.next_clean_confirmed + 'T12:00:00');
+      var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var dateLabel = days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
+        '<div><div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
+        '<div style="font-size:12px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div></div>' +
+        '<div style="text-align:right;"><div style="font-size:11px;color:#7dc87d;font-weight:600;">' + dateLabel + '</div>' +
+        '<div style="font-size:11px;color:#4a7aaa;">Confirmed</div></div>' +
+        '</div>';
+    }).join('');
+  }
+  if (noDate.length) {
+    html += '<div style="font-size:11px;color:#4a7aaa;padding:10px 0 4px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;">No confirmed date</div>';
+    html += noDate.map(function(c) {
+      var approx = calcNextClean(c.first_clean_completed, c.clean_frequency);
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
+        '<div><div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
+        '<div style="font-size:12px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div></div>' +
+        '<div style="text-align:right;"><div style="font-size:11px;color:#D4AA28;">' + (approx || 'Unknown') + '</div>' +
+        '<div style="font-size:11px;color:#4a7aaa;">Approx only</div></div>' +
+        '</div>';
+    }).join('');
+  }
+  el.innerHTML = html;
 }
 </script>
 </body>
