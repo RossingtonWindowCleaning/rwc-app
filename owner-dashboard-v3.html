@@ -498,6 +498,38 @@ body {
     <div class="modal-section">
       <div class="modal-section-label">Edit details</div>
       <div class="edit-field-row">
+        <span class="edit-label">First name</span>
+        <input class="edit-input" type="text" id="edit-firstname" placeholder="First name">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Last name</span>
+        <input class="edit-input" type="text" id="edit-lastname" placeholder="Last name">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Phone</span>
+        <input class="edit-input" type="tel" id="edit-phone" placeholder="07...">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Email</span>
+        <input class="edit-input" type="email" id="edit-email" placeholder="email@example.com">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Address line 1</span>
+        <input class="edit-input" type="text" id="edit-address1" placeholder="Street">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Address line 2</span>
+        <input class="edit-input" type="text" id="edit-address2" placeholder="Area">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Town</span>
+        <input class="edit-input" type="text" id="edit-town" placeholder="Town">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">Postcode</span>
+        <input class="edit-input" type="text" id="edit-postcode" placeholder="DN...">
+      </div>
+      <div class="edit-field-row">
         <span class="edit-label">Price (£)</span>
         <input class="edit-input" type="number" id="edit-price" placeholder="0.00">
       </div>
@@ -838,6 +870,14 @@ function openCustomer(customerId) {
   document.getElementById('modal-gate-strikes').textContent = c.gate_strike_count || '0';
   document.getElementById('modal-notes').textContent = c.notes || 'No notes';
 
+  document.getElementById('edit-firstname').value = c.first_name || '';
+  document.getElementById('edit-lastname').value = c.last_name || '';
+  document.getElementById('edit-phone').value = c.contact_number || '';
+  document.getElementById('edit-email').value = c.email || '';
+  document.getElementById('edit-address1').value = c.address_line_1 || '';
+  document.getElementById('edit-address2').value = c.address_line_2 || '';
+  document.getElementById('edit-town').value = c.town || '';
+  document.getElementById('edit-postcode').value = c.postcode || '';
   document.getElementById('edit-price').value = c.regular_clean_price || '';
   document.getElementById('edit-frequency').value = c.clean_frequency || '';
   document.getElementById('edit-next-date').value = c.next_clean_confirmed ? c.next_clean_confirmed.substring(0,10) : '';
@@ -861,6 +901,14 @@ async function saveCustomerEdits() {
     var result = await apiPost({
       action: 'updateCustomer',
       customer_id: currentCustomer.customer_id,
+      first_name: document.getElementById('edit-firstname').value,
+      last_name: document.getElementById('edit-lastname').value,
+      contact_number: document.getElementById('edit-phone').value,
+      email: document.getElementById('edit-email').value,
+      address_line_1: document.getElementById('edit-address1').value,
+      address_line_2: document.getElementById('edit-address2').value,
+      town: document.getElementById('edit-town').value,
+      postcode: document.getElementById('edit-postcode').value,
       regular_clean_price: document.getElementById('edit-price').value,
       clean_frequency: document.getElementById('edit-frequency').value,
       next_clean_confirmed: document.getElementById('edit-next-date').value,
