@@ -826,7 +826,12 @@ function openCustomer(customerId) {
   document.getElementById('modal-balance').style.color = balance > 0 ? '#ff8a8a' : '#7dc87d';
   document.getElementById('modal-status').textContent = formatStatus(c.job_status);
   document.getElementById('modal-last-clean').textContent = formatDate(c.first_clean_completed) || '—';
-  document.getElementById('modal-next-clean').textContent = formatDate(c.next_clean_confirmed) || 'Not set';
+  if (c.next_clean_confirmed) {
+    document.getElementById('modal-next-clean').textContent = formatDate(c.next_clean_confirmed) + ' (confirmed)';
+  } else {
+    var approx = calcNextClean(c.first_clean_completed, c.clean_frequency);
+    document.getElementById('modal-next-clean').textContent = approx ? approx + ' (approx)' : 'Not set';
+  }
   document.getElementById('modal-referrals').textContent = c.referral_count || '0';
   document.getElementById('modal-gate-strikes').textContent = c.gate_strike_count || '0';
   document.getElementById('modal-notes').textContent = c.notes || 'No notes';
@@ -984,6 +989,16 @@ function formatDate(str) {
   var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function calcNextClean(lastClean, frequency) {
+  if (!lastClean || !frequency) return null;
+  var d = new Date(lastClean);
+  if (isNaN(d.getTime())) return null;
+  var weeks = parseInt(frequency);
+  if (!weeks) return null;
+  d.setDate(d.getDate() + (weeks * 7));
+  return formatDate(d.toISOString());
 }
 
 function formatStatus(s) {
