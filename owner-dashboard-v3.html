@@ -746,12 +746,13 @@ async function loadDashboard() {
 function renderTodaysJobs(jobs) {
   var el = document.getElementById('todays-jobs');
   if (!jobs.length) { el.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No jobs scheduled for today</div>'; return; }
-  el.innerHTML = jobs.map(function(j) {
-    return '<div class="job-row">' +
-      '<div><div class="job-name">' + j.first_name + ' ' + j.last_name + '</div>' +
+  el.innerHTML = '<div id="todays-jobs-list">' + jobs.map(function(j) {
+    return '<div class="job-row" data-id="' + j.customer_id + '">' +
+      '<div onclick="openCustomerById(\'' + j.customer_id + '\')" style="cursor:pointer;flex:1;">' +
+      '<div class="job-name">' + j.first_name + ' ' + j.last_name + '</div>' +
       '<div class="job-address">' + j.address_line_1 + '</div></div>' +
       '<div class="job-actions">' + jobButtons(j) + '</div></div>';
-  }).join('');
+  }).join('') + '</div>';
 }
 
 function renderWeeklyJobs(jobs) {
@@ -1243,7 +1244,10 @@ function renderCalendar() {
   }
 }
 
+var currentDayDate = '';
+
 function showDayJobs(dateStr, jobs) {
+  currentDayDate = dateStr;
   var card = document.getElementById('cal-day-card');
   var title = document.getElementById('cal-day-title');
   var list = document.getElementById('cal-day-jobs');
@@ -1254,15 +1258,33 @@ function showDayJobs(dateStr, jobs) {
   if (!jobs.length) {
     list.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No confirmed cleans on this date</div>';
   } else {
-    list.innerHTML = jobs.map(function(c) {
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
-        '<div><div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
+    list.innerHTML = '<div id="day-jobs-sortable">' + jobs.map(function(c) {
+      return '<div class="job-row" data-id="' + c.customer_id + '" style="cursor:grab;">' +
+        '<span style="color:#4a7aaa;font-size:16px;margin-right:8px;">&#9776;</span>' +
+        '<div onclick="openCustomerById(\'' + c.customer_id + '\')" style="cursor:pointer;flex:1;">' +
+        '<div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
         '<div style="font-size:12px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div></div>' +
         '<span style="font-size:12px;color:#D4AA28;font-weight:600;">&#163;' + parseFloat(c.regular_clean_price || 0).toFixed(2) + '</span>' +
         '</div>';
-    }).join('');
+    }).join('') + '</div>';
+    initDragSort('day-jobs-sortable', saveDayOrder);
   }
   card.style.display = 'block';
+}
+
+function saveDayOrder() {
+  var items = document.querySelectorAll('#day-jobs-sortable .job-row');
+  var order = Array.from(items).map(function(el) { return el.getAttribute('data-id'); });
+  apiPost({ action: 'saveJobOrder', order: order });
+}
+
+function openCustomerById(customerId) {
+  if (allCustomers.length === 0) {
+    loadCustomers().then(function() { openCustomer(customerId); });
+  } else {
+    showTab('customers');
+    openCustomer(customerId);
+  }
 }
 
 function renderScheduleList() {
@@ -1303,11 +1325,51 @@ function renderScheduleList() {
         '<div><div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
         '<div style="font-size:12px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div></div>' +
         '<div style="text-align:right;"><div style="font-size:11px;color:#D4AA28;">' + (approx || 'Unknown') + '</div>' +
-        '<div style="font-size:11px;color:#4a7aaa;">Approx only</div></div>' +
-        '</div>';
+        '<div style="font-size:11px;color:#4a7aaa;">Approx only</div>' +
+        '<button onclick="openSetDateModal(\'' + c.customer_id + '\',\'\')" style="font-size:10px;padding:3px 8px;margin-top:4px;background:rgba(212,170,40,0.15);border:1px solid rgba(212,170,40,0.3);color:#D4AA28;border-radius:6px;cursor:pointer;">Set date</button></div>' +
     }).join('');
   }
   el.innerHTML = html;
+}
+
+function initDragSort(containerId, onSave) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var dragging = null;
+  var items = el.querySelectorAll('.job-row');
+  items.forEach(function(item) {
+    item.setAttribute('draggable', 'true');
+    item.addEventListener('dragstart', function() { dragging = item; item.style.opacity = '0.4'; });
+    item.addEventListener('dragend', function() { dragging = null; item.style.opacity = '1'; if (onSave) onSave(); });
+    item.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (dragging && dragging !== item) {
+        var rect = item.getBoundingClientRect();
+        var mid = rect.top + rect.height / 2;
+        if (e.clientY < mid) { el.insertBefore(dragging, item); }
+        else { el.insertBefore(dragging, item.nextSibling); }
+      }
+    });
+  });
+}
+
+function openSetDateModal(customerId, currentDate) {
+  var name = '';
+  var c = (allCustomers || scheduleCustomers).find(function(x) { return x.customer_id == customerId; });
+  if (c) name = c.first_name + ' ' + c.last_name;
+  var date = prompt('Set confirmed clean date for ' + name + ':\n(Format: YYYY-MM-DD)', currentDate || '');
+  if (!date) return;
+  apiPost({ action: 'setConfirmedDate', customer_id: customerId, date: date }).then(function(result) {
+    if (result.success) {
+      var idx = scheduleCustomers.findIndex(function(x) { return x.customer_id == customerId; });
+      if (idx > -1) scheduleCustomers[idx].next_clean_confirmed = date;
+      var idx2 = (allCustomers || []).findIndex(function(x) { return x.customer_id == customerId; });
+      if (idx2 > -1) allCustomers[idx2].next_clean_confirmed = date;
+      renderCalendar();
+      renderScheduleList();
+      alert('Date saved!');
+    } else { alert('Something went wrong. Please try again.'); }
+  });
 }
 </script>
 </body>
