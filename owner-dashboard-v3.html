@@ -1326,7 +1326,7 @@ function renderScheduleList() {
         '<div style="font-size:12px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div></div>' +
         '<div style="text-align:right;"><div style="font-size:11px;color:#D4AA28;">' + (approx || 'Unknown') + '</div>' +
         '<div style="font-size:11px;color:#4a7aaa;">Approx only</div>' +
-        '<button onclick="openSetDateModal(\'' + c.customer_id + '\',\'\')" style="font-size:10px;padding:3px 8px;margin-top:4px;background:rgba(212,170,40,0.15);border:1px solid rgba(212,170,40,0.3);color:#D4AA28;border-radius:6px;cursor:pointer;">Set date</button></div>' +
+        '<button onclick="openSetDateModal(\'' + c.customer_id + '\',\'\')" style="font-size:10px;padding:3px 8px;margin-top:4px;background:rgba(212,170,40,0.15);border:1px solid rgba(212,170,40,0.3);color:#D4AA28;border-radius:6px;cursor:pointer;">Set date</button></div></div>';
     }).join('');
   }
   el.innerHTML = html;
