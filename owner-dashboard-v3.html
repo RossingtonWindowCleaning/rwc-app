@@ -826,7 +826,9 @@ function openCustomer(customerId) {
   document.getElementById('modal-balance').style.color = balance > 0 ? '#ff8a8a' : '#7dc87d';
   document.getElementById('modal-status').textContent = formatStatus(c.job_status);
   document.getElementById('modal-last-clean').textContent = formatDate(c.first_clean_completed) || '—';
-  if (c.next_clean_confirmed) {
+  var confirmedDate = c.next_clean_confirmed ? new Date(c.next_clean_confirmed) : null;
+  var isConfirmedFuture = confirmedDate && confirmedDate >= new Date(new Date().toDateString());
+  if (isConfirmedFuture) {
     document.getElementById('modal-next-clean').textContent = formatDate(c.next_clean_confirmed) + ' (confirmed)';
   } else {
     var approx = calcNextClean(c.first_clean_completed, c.clean_frequency);
