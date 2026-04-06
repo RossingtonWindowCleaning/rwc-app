@@ -556,6 +556,7 @@ body {
 
     <button class="btn btn-gold btn-full" id="save-btn" onclick="saveCustomerEdits()">Save changes</button>
     <button class="btn btn-red btn-full" style="margin-top:8px;" onclick="resetCustomerPassword()">Reset customer password</button>
+    <button class="btn btn-red btn-full" style="margin-top:8px;background:rgba(100,20,20,0.4);" onclick="deleteCustomer()">Delete customer</button>
     <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="closeModal('customer-modal')">Close</button>
   </div>
 </div>
@@ -849,7 +850,7 @@ function openCustomer(customerId) {
 
   document.getElementById('modal-name').textContent = c.first_name + ' ' + c.last_name;
   document.getElementById('modal-id').textContent = 'Customer ID: ' + c.customer_id + ' · Joined: ' + (formatDate(c.date_joined) || 'Unknown');
-  document.getElementById('modal-phone').textContent = c.contact_number || '—';
+  document.getElementById('modal-phone').textContent = fixPhone(c.contact_number) || '—';
   document.getElementById('modal-email').textContent = c.email || '—';
   document.getElementById('modal-address').textContent = [c.address_line_1, c.address_line_2, c.town, c.postcode].filter(Boolean).join(', ');
 
@@ -872,7 +873,7 @@ function openCustomer(customerId) {
 
   document.getElementById('edit-firstname').value = c.first_name || '';
   document.getElementById('edit-lastname').value = c.last_name || '';
-  document.getElementById('edit-phone').value = c.contact_number || '';
+  document.getElementById('edit-phone').value = fixPhone(c.contact_number) || '';
   document.getElementById('edit-email').value = c.email || '';
   document.getElementById('edit-address1').value = c.address_line_1 || '';
   document.getElementById('edit-address2').value = c.address_line_2 || '';
@@ -1039,6 +1040,29 @@ function formatDate(str) {
   var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function fixPhone(phone) {
+  if (!phone) return '';
+  var p = String(phone).trim().replace(/^'+/, '');
+  if (p.length === 10 && !p.startsWith('0')) p = '0' + p;
+  return p;
+}
+
+async function deleteCustomer() {
+  if (!confirm('Move ' + currentCustomer.first_name + ' ' + currentCustomer.last_name + ' to Inactive Addresses? This removes them from your active customer list.')) return;
+  try {
+    var result = await apiPost({ action: 'deleteCustomer', customer_id: currentCustomer.customer_id });
+    if (result.success) {
+      closeModal('customer-modal');
+      allCustomers = allCustomers.filter(function(c) { return c.customer_id !== currentCustomer.customer_id; });
+      renderCustomerList(allCustomers);
+    } else {
+      alert('Something went wrong. Please try again.');
+    }
+  } catch(e) {
+    alert('Connection error. Please try again.');
+  }
 }
 
 function calcNextClean(lastClean, frequency) {
