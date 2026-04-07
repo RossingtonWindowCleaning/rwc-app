@@ -472,18 +472,18 @@ async function init() {
       document.getElementById('survey-card').style.display = 'block';
     }
 
+    var todayStr = new Date().toISOString().substring(0, 10);
     if (c.next_clean_confirmed) {
-      document.getElementById('next-clean').textContent = formatDate(c.next_clean_confirmed);
-      document.getElementById('next-clean-badge').textContent = 'Confirmed';
-      document.getElementById('next-clean-badge').className = 'badge badge-green';
-      if (c.gate_access) {
-        document.getElementById('next-clean-sub').textContent = 'Please leave your gate open';
-      }
+      var isToday = c.next_clean_confirmed.substring(0, 10) === todayStr;
+      document.getElementById('next-clean').textContent = isToday ? 'Today' : formatDate(c.next_clean_confirmed);
+      document.getElementById('next-clean-badge').textContent = isToday ? 'Scheduled for today' : 'Confirmed';
+      document.getElementById('next-clean-badge').className = isToday ? 'badge badge-amber' : 'badge badge-green';
+      document.getElementById('next-clean-sub').textContent = isToday ? 'Your clean is booked for today' : (c.gate_access ? 'Please leave your gate open' : '');
     } else if (c.next_clean_approx) {
       document.getElementById('next-clean').textContent = formatDate(c.next_clean_approx) + ' (approx)';
       document.getElementById('next-clean-badge').textContent = 'Date to be confirmed';
       document.getElementById('next-clean-badge').className = 'badge badge-blue';
-      document.getElementById('next-clean-sub').textContent = 'We\'ll confirm your exact date closer to the time';
+      document.getElementById('next-clean-sub').textContent = "We'll confirm your exact date closer to the time";
     } else {
       document.getElementById('next-clean').textContent = 'To be scheduled';
       document.getElementById('next-clean-badge').textContent = 'Pending';
