@@ -744,15 +744,7 @@ async function loadDashboard() {
 }
 
 function renderTodaysJobs(jobs) {
-  var el = document.getElementById('todays-jobs');
-  if (!jobs.length) { el.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No jobs scheduled for today</div>'; return; }
-  el.innerHTML = '<div id="todays-jobs-list">' + jobs.map(function(j) {
-    return '<div class="job-row" data-id="' + j.customer_id + '">' +
-      '<div onclick="openCustomerById(\'' + j.customer_id + '\')" style="cursor:pointer;flex:1;">' +
-      '<div class="job-name">' + j.first_name + ' ' + j.last_name + '</div>' +
-      '<div class="job-address">' + j.address_line_1 + '</div></div>' +
-      '<div class="job-actions">' + jobButtons(j) + '</div></div>';
-  }).join('') + '</div>';
+  renderTodaysJobsWithLogic(jobs);
 }
 
 function renderWeeklyJobs(jobs) {
@@ -781,19 +773,37 @@ function renderPaymentNotifications(notifications) {
 function jobButtons(j) {
   var status = j.job_status;
   var id = j.customer_id;
-  if (status === 'not_scheduled' || status === 'none' || !status) {
-    return '<button class="btn btn-green" onclick="updateStatus(\'' + id + '\',\'on_the_way\',this)">On the way</button>';
-  }
-  if (status === 'on_the_way') {
-    return '<button class="btn btn-gold" onclick="updateStatus(\'' + id + '\',\'in_progress\',this)">Start clean</button>';
-  }
   if (status === 'in_progress') {
     return '<button class="btn btn-gold" onclick="updateStatus(\'' + id + '\',\'complete\',this)">End clean</button>';
   }
   if (status === 'complete') {
-    return '<span class="badge badge-green">Complete</span>';
+    return '<span class="badge badge-green">Complete ✓</span>';
   }
   return '';
+}
+
+function getStartCleanButton(id) {
+  return '<button class="btn btn-green" onclick="updateStatus(\'' + id + '\',\'in_progress\',this)">Start clean</button>';
+}
+
+function renderTodaysJobsWithLogic(jobs) {
+  var el = document.getElementById('todays-jobs');
+  if (!jobs.length) { el.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No jobs scheduled for today</div>'; return; }
+  var firstActiveIdx = -1;
+  for (var i = 0; i < jobs.length; i++) {
+    if (jobs[i].job_status !== 'complete') { firstActiveIdx = i; break; }
+  }
+  el.innerHTML = '<div id="todays-jobs-list">' + jobs.map(function(j, idx) {
+    var btn = jobButtons(j);
+    if (idx === firstActiveIdx && j.job_status !== 'in_progress' && j.job_status !== 'complete') {
+      btn = getStartCleanButton(j.customer_id);
+    }
+    return '<div class="job-row" data-id="' + j.customer_id + '">' +
+      '<div onclick="openCustomerById(\'' + j.customer_id + '\')" style="cursor:pointer;flex:1;">' +
+      '<div class="job-name">' + j.first_name + ' ' + j.last_name + '</div>' +
+      '<div class="job-address">' + j.address_line_1 + '</div></div>' +
+      '<div class="job-actions">' + btn + '</div></div>';
+  }).join('') + '</div>';
 }
 
 async function updateStatus(customerId, newStatus, btn) {
@@ -1336,19 +1346,48 @@ function initDragSort(containerId, onSave) {
   var el = document.getElementById(containerId);
   if (!el) return;
   var dragging = null;
+  var startY = 0;
   var items = el.querySelectorAll('.job-row');
+
   items.forEach(function(item) {
     item.setAttribute('draggable', 'true');
+
     item.addEventListener('dragstart', function() { dragging = item; item.style.opacity = '0.4'; });
-    item.addEventListener('dragend', function() { dragging = null; item.style.opacity = '1'; if (onSave) onSave(); });
+    item.addEventListener('dragend', function() { item.style.opacity = '1'; dragging = null; if (onSave) onSave(); });
     item.addEventListener('dragover', function(e) {
       e.preventDefault();
-      if (dragging && dragging !== item) {
-        var rect = item.getBoundingClientRect();
-        var mid = rect.top + rect.height / 2;
-        if (e.clientY < mid) { el.insertBefore(dragging, item); }
-        else { el.insertBefore(dragging, item.nextSibling); }
-      }
+      if (!dragging || dragging === item) return;
+      var rect = item.getBoundingClientRect();
+      if (e.clientY < rect.top + rect.height / 2) el.insertBefore(dragging, item);
+      else el.insertBefore(dragging, item.nextSibling);
+    });
+
+    item.addEventListener('touchstart', function(e) {
+      dragging = item;
+      startY = e.touches[0].clientY;
+      item.style.opacity = '0.5';
+      item.style.background = 'rgba(212,170,40,0.1)';
+    }, { passive: true });
+
+    item.addEventListener('touchmove', function(e) {
+      e.preventDefault();
+      var touch = e.touches[0];
+      var els = el.querySelectorAll('.job-row');
+      els.forEach(function(other) {
+        if (other === dragging) return;
+        var rect = other.getBoundingClientRect();
+        if (touch.clientY > rect.top && touch.clientY < rect.bottom) {
+          if (touch.clientY < rect.top + rect.height / 2) el.insertBefore(dragging, other);
+          else el.insertBefore(dragging, other.nextSibling);
+        }
+      });
+    }, { passive: false });
+
+    item.addEventListener('touchend', function() {
+      item.style.opacity = '1';
+      item.style.background = '';
+      dragging = null;
+      if (onSave) onSave();
     });
   });
 }
