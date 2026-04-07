@@ -466,8 +466,8 @@ async function init() {
 
     document.getElementById('greeting').textContent = 'Hi ' + c.first_name + ' 👋';
 
-    const surveyKey = 'survey_done_' + CUSTOMER_ID;
-    const alreadyDone = localStorage.getItem(surveyKey);
+    var todaySurveyKey = 'survey_done_' + CUSTOMER_ID + '_' + new Date().toISOString().substring(0, 10);
+    var alreadyDone = localStorage.getItem(todaySurveyKey);
     if (c.job_status === 'complete' && !alreadyDone) {
       document.getElementById('survey-card').style.display = 'block';
     }
@@ -598,7 +598,8 @@ async function selectFace(rating) {
   } catch (e) {
     console.error('Feedback save failed', e);
   }
-  localStorage.setItem('survey_done_' + CUSTOMER_ID, '1');
+  var todaySurveyKey = 'survey_done_' + CUSTOMER_ID + '_' + new Date().toISOString().substring(0, 10);
+  localStorage.setItem(todaySurveyKey, '1');
   if (rating === 4) {
     const reviewDone = localStorage.getItem('review_done_' + CUSTOMER_ID);
     if (!reviewDone) {
