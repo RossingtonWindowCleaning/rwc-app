@@ -86,6 +86,10 @@ body { font-family: Arial, sans-serif; background: #0a1628; min-height: 100vh; }
     <div class="status-message" id="status-message">Loading...</div>
     <div class="status-sub" id="status-sub"></div>
     <span class="badge badge-blue" id="status-badge"></span>
+    <div id="cleans-away-wrap" style="display:none;margin-top:14px;">
+      <div id="cleans-dots" style="display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:6px;"></div>
+      <div id="cleans-away-label" style="text-align:center;font-size:12px;color:#4a7aaa;"></div>
+    </div>
   </div>
 
   <div class="card">
@@ -155,12 +159,62 @@ async function init() {
     document.getElementById('last-clean').textContent = formatDate(job.last_clean) || 'Not recorded';
     document.getElementById('next-clean').textContent = formatDate(job.next_clean_approx) || 'To be confirmed';
     document.getElementById('frequency').textContent = job.clean_frequency || 'Every 6 weeks';
+
+    var cleansAway = parseInt(job.cleans_away) || 0;
+    var wrap = document.getElementById('cleans-away-wrap');
+    if (cleansAway > 0 && job.status !== 'complete' && job.status !== 'in_progress') {
+      wrap.style.display = 'block';
+      var dots = '';
+      for (var d = 0; d < Math.min(cleansAway, 8); d++) {
+        dots += '<div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.1);"></div>';
+        if (d < cleansAway - 1 && d < 7) dots += '<div style="flex:1;height:2px;background:rgba(255,255,255,0.06);"></div>';
+      }
+      document.getElementById('cleans-dots').innerHTML = dots;
+      document.getElementById('cleans-away-label').textContent = cleansAway === 1 ? 'One clean before yours' : cleansAway + ' cleans before yours';
+    } else {
+      wrap.style.display = 'none';
+    }
   } catch (err) {
     console.error('Failed to load tracker:', err);
   }
 }
 
 init();
+
+setInterval(async function() {
+  try {
+    var fresh = await loadStatusOnly();
+    if (!fresh || !fresh.tracker) return;
+    var job = fresh.tracker;
+    var config = STATUS_CONFIG[job.status] || STATUS_CONFIG['none'];
+    document.getElementById('status-message').textContent = config.message;
+    document.getElementById('status-sub').textContent = config.sub;
+    document.getElementById('status-badge').textContent = config.badge;
+    document.getElementById('status-badge').className = config.badgeClass;
+    var iconEl = document.getElementById('status-icon');
+    if (job.status && job.status !== 'not_scheduled' && job.status !== 'none') {
+      iconEl.style.display = 'block';
+      iconEl.textContent = config.icon;
+    } else {
+      iconEl.style.display = 'none';
+    }
+    var cleansAway = parseInt(job.cleans_away) || 0;
+    var wrap = document.getElementById('cleans-away-wrap');
+    if (cleansAway > 0 && job.status !== 'complete' && job.status !== 'in_progress') {
+      wrap.style.display = 'block';
+      var dots = '';
+      for (var d = 0; d < Math.min(cleansAway, 8); d++) {
+        dots += '<div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.1);"></div>';
+        if (d < cleansAway - 1 && d < 7) dots += '<div style="flex:1;height:2px;background:rgba(255,255,255,0.06);"></div>';
+      }
+      document.getElementById('cleans-dots').innerHTML = dots;
+      document.getElementById('cleans-away-label').textContent = cleansAway === 1 ? 'One clean before yours' : cleansAway + ' cleans before yours';
+    } else {
+      wrap.style.display = 'none';
+    }
+  } catch(e) {}
+}, 30000);
+
 function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
 function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
 </script>

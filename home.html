@@ -539,6 +539,27 @@ async function init() {
   }
 }
 
+function startStatusPolling() {
+  setInterval(async function() {
+    try {
+      var fresh = await loadStatusOnly();
+      if (!fresh || !fresh.customer) return;
+      var status = fresh.customer.job_status || 'none';
+      var statusMap = {
+        'not_scheduled': ['No clean today', 'Check back on your clean day'],
+        'on_the_way':    ['We're on our way! 🚐', 'Get ready — we'll be with you soon'],
+        'next':          ['You're next! ⭐', 'We're finishing up the job before yours'],
+        'in_progress':   ['We're cleaning now 🪟', 'Sit back and relax!'],
+        'complete':      ['All done today ✅', 'Your windows are sparkling clean'],
+        'none':          ['No clean scheduled today', 'Check the tracker on your clean day']
+      };
+      var s = statusMap[status] || statusMap['none'];
+      document.getElementById('tracker-title').textContent = s[0];
+      document.getElementById('tracker-sub').textContent = s[1];
+    } catch(e) {}
+  }, 30000);
+}
+
 async function loadBankDetails() {
   if (bankDetailsLoaded) return;
   try {
@@ -605,6 +626,7 @@ function closeReviewPopup() {
 }
 
 init();
+startStatusPolling();
 
 window.addEventListener('load', function() {
   if (needsPushPrompt()) {
