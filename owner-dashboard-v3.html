@@ -563,8 +563,12 @@ body {
         <input class="edit-input" type="text" id="edit-postcode" placeholder="DN...">
       </div>
       <div class="edit-field-row">
-        <span class="edit-label">Price (£)</span>
+        <span class="edit-label">Regular price (£)</span>
         <input class="edit-input" type="number" id="edit-price" placeholder="0.00">
+      </div>
+      <div class="edit-field-row">
+        <span class="edit-label">First clean (£)</span>
+        <input class="edit-input" type="number" id="edit-first-price" placeholder="0.00">
       </div>
       <div class="edit-field-row">
         <span class="edit-label">Frequency</span>
@@ -641,8 +645,12 @@ body {
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label class="form-label">Clean price (£) *</label>
-        <input class="form-input" id="new-price" type="number" placeholder="15">
+        <label class="form-label">Regular clean price (£) *</label>
+        <input class="form-input" id="new-price" type="number" placeholder="20">
+      </div>
+      <div class="form-group">
+        <label class="form-label">First clean price (£) *</label>
+        <input class="form-input" id="new-first-price" type="number" placeholder="26">
       </div>
       <div class="form-group">
         <label class="form-label">Frequency *</label>
@@ -927,6 +935,7 @@ function openCustomer(customerId) {
   document.getElementById('edit-town').value = c.town || '';
   document.getElementById('edit-postcode').value = c.postcode || '';
   document.getElementById('edit-price').value = c.regular_clean_price || '';
+  document.getElementById('edit-first-price').value = c.first_clean_price || '';
   document.getElementById('edit-frequency').value = c.clean_frequency || '';
   document.getElementById('edit-next-date').value = c.next_clean_confirmed ? c.next_clean_confirmed.substring(0,10) : '';
   document.getElementById('edit-balance').value = c.outstanding_balance || '';
@@ -995,6 +1004,7 @@ async function saveCustomerEdits() {
       town: document.getElementById('edit-town').value,
       postcode: document.getElementById('edit-postcode').value,
       regular_clean_price: document.getElementById('edit-price').value,
+      first_clean_price: document.getElementById('edit-first-price').value,
       clean_frequency: document.getElementById('edit-frequency').value,
       next_clean_confirmed: document.getElementById('edit-next-date').value,
       outstanding_balance: document.getElementById('edit-balance').value,
@@ -1076,6 +1086,7 @@ async function submitNewCustomer() {
       contact_number: phone,
       email: document.getElementById('new-email').value.trim(),
       regular_clean_price: price,
+      first_clean_price: document.getElementById('new-first-price').value.trim(),
       clean_frequency: frequency,
       notes: document.getElementById('new-notes').value.trim()
     });
