@@ -544,7 +544,8 @@ function startStatusPolling() {
     try {
       var fresh = await loadStatusOnly();
       if (!fresh || !fresh.customer) return;
-      var status = fresh.customer.job_status || 'none';
+      var c = fresh.customer;
+      var status = c.job_status || 'none';
       var statusMap = {
         'not_scheduled': ['No clean today', 'Check back on your clean day'],
         'on_the_way':    ["We're on our way! 🚐", "Get ready — we'll be with you soon"],
@@ -556,6 +557,42 @@ function startStatusPolling() {
       var s = statusMap[status] || statusMap['none'];
       document.getElementById('tracker-title').textContent = s[0];
       document.getElementById('tracker-sub').textContent = s[1];
+
+      var balance = parseFloat(c.outstanding_balance) || 0;
+      var payCard = document.getElementById('payment-card');
+      if (balance > 0) {
+        payCard.classList.remove('payment-gold');
+        document.getElementById('payment-label').textContent = 'Outstanding payment';
+        document.getElementById('payment-title').textContent = '£' + balance.toFixed(2) + ' due';
+        document.getElementById('payment-badge').textContent = 'Overdue';
+        document.getElementById('payment-badge').className = 'badge badge-red';
+        var btnWrap = document.getElementById('payment-btn-wrap');
+        if (!document.getElementById('poll-pay-btn')) {
+          btnWrap.innerHTML = '';
+          var payBtn = document.createElement('button');
+          payBtn.id = 'poll-pay-btn';
+          payBtn.className = 'btn btn-overdue';
+          payBtn.style.marginTop = '10px';
+          payBtn.textContent = 'Pay now — £' + balance.toFixed(2);
+          payBtn.addEventListener('click', openPayPanel);
+          var overdueText = document.createElement('div');
+          overdueText.className = 'overdue-text';
+          overdueText.textContent = 'Payment overdue — please pay to avoid service suspension';
+          btnWrap.appendChild(payBtn);
+          btnWrap.appendChild(overdueText);
+        }
+      } else {
+        payCard.classList.add('payment-gold');
+        document.getElementById('payment-label').textContent = 'Payment status';
+        document.getElementById('payment-title').textContent = 'All paid up ✅';
+        document.getElementById('payment-badge').textContent = 'Up to date';
+        document.getElementById('payment-badge').className = 'badge badge-green';
+      }
+
+      var todaySurveyKey = 'survey_done_' + CUSTOMER_ID + '_' + new Date().toISOString().substring(0, 10);
+      if (status === 'complete' && !localStorage.getItem(todaySurveyKey)) {
+        document.getElementById('survey-card').style.display = 'block';
+      }
     } catch(e) {}
   }, 30000);
 }
