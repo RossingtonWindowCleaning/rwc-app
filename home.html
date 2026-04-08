@@ -521,7 +521,7 @@ async function init() {
 
       const overdueText = document.createElement('div');
       overdueText.className = 'overdue-text';
-      overdueText.textContent = 'Payment overdue — please pay to avoid service suspension';
+      overdueText.textContent = 'Please pay within 48 hours of your clean.';
 
       document.getElementById('payment-btn-wrap').appendChild(payBtn);
       document.getElementById('payment-btn-wrap').appendChild(overdueText);
@@ -577,7 +577,7 @@ function startStatusPolling() {
           payBtn.addEventListener('click', openPayPanel);
           var overdueText = document.createElement('div');
           overdueText.className = 'overdue-text';
-          overdueText.textContent = 'Payment overdue — please pay to avoid service suspension';
+          overdueText.textContent = 'Please pay within 48 hours of your clean.';
           btnWrap.appendChild(payBtn);
           btnWrap.appendChild(overdueText);
         }
