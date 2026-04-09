@@ -349,24 +349,8 @@ body {
     <div class="card-label">Today's progress tracker</div>
     <div class="card-title" id="tracker-title">Loading...</div>
     <div class="card-sub" id="tracker-sub"></div>
-    <div class="tracker">
-      <div class="tracker-dot done"></div>
-      <div class="tracker-line"></div>
-      <div class="tracker-dot done"></div>
-      <div class="tracker-line"></div>
-      <div class="tracker-dot active"></div>
-      <div class="tracker-line"></div>
-      <div class="tracker-dot waiting"></div>
-      <div class="tracker-line"></div>
-      <div class="tracker-dot waiting"></div>
-    </div>
-    <div class="tracker-labels">
-      <span>Done</span>
-      <span>Done</span>
-      <span>Now</span>
-      <span>Next</span>
-      <span>You</span>
-    </div>
+    <div class="tracker" id="tracker-dots"></div>
+    <div class="tracker-labels" id="tracker-dot-labels"></div>
   </div>
 
   <div class="card" id="payment-card">
@@ -451,6 +435,46 @@ const GOOGLE_REVIEW_URL = 'https://g.page/r/CWRJU9K9hyhWEBM/review';
 let currentBalance = 0;
 let bankDetailsLoaded = false;
 
+function renderTracker(jobStatus) {
+  const stages = [
+    { key: 'confirmed', label: 'Confirmed' },
+    { key: 'on_the_way', label: 'En route' },
+    { key: 'cleaning', label: 'Cleaning' },
+    { key: 'done', label: 'Done' }
+  ];
+
+  const stageIndex = {
+    'not_scheduled': -1,
+    'none':          -1,
+    'on_the_way':     1,
+    'next':           2,
+    'in_progress':    2,
+    'complete':       4
+  };
+
+  const activeIndex = (stageIndex[jobStatus] !== undefined) ? stageIndex[jobStatus] : -1;
+
+  let dotsHtml = '';
+  let labelsHtml = '';
+
+  for (let i = 0; i < stages.length; i++) {
+    let dotClass = 'tracker-dot waiting';
+    if (activeIndex === 4) {
+      dotClass = 'tracker-dot done';
+    } else if (i < activeIndex) {
+      dotClass = 'tracker-dot done';
+    } else if (i === activeIndex) {
+      dotClass = 'tracker-dot active';
+    }
+    dotsHtml += '<div class="' + dotClass + '"></div>';
+    if (i < stages.length - 1) dotsHtml += '<div class="tracker-line"></div>';
+    labelsHtml += '<span>' + stages[i].label + '</span>';
+  }
+
+  document.getElementById('tracker-dots').innerHTML = dotsHtml;
+  document.getElementById('tracker-dot-labels').innerHTML = labelsHtml;
+}
+
 async function init() {
   showLoader();
   try {
@@ -466,24 +490,24 @@ async function init() {
 
     document.getElementById('greeting').textContent = 'Hi ' + c.first_name + ' 👋';
 
-    var todaySurveyKey = 'survey_done_' + CUSTOMER_ID + '_' + new Date().toISOString().substring(0, 10);
-    var alreadyDone = localStorage.getItem(todaySurveyKey);
+    const surveyKey = 'survey_done_' + CUSTOMER_ID;
+    const alreadyDone = localStorage.getItem(surveyKey);
     if (c.job_status === 'complete' && !alreadyDone) {
       document.getElementById('survey-card').style.display = 'block';
     }
 
-    var todayStr = new Date().toISOString().substring(0, 10);
     if (c.next_clean_confirmed) {
-      var isToday = c.next_clean_confirmed.substring(0, 10) === todayStr;
-      document.getElementById('next-clean').textContent = isToday ? 'Today' : formatDate(c.next_clean_confirmed);
-      document.getElementById('next-clean-badge').textContent = isToday ? 'Scheduled for today' : 'Confirmed';
-      document.getElementById('next-clean-badge').className = isToday ? 'badge badge-amber' : 'badge badge-green';
-      document.getElementById('next-clean-sub').textContent = isToday ? 'Your clean is booked for today' : (c.gate_access ? 'Please leave your gate open' : '');
+      document.getElementById('next-clean').textContent = formatDate(c.next_clean_confirmed);
+      document.getElementById('next-clean-badge').textContent = 'Confirmed';
+      document.getElementById('next-clean-badge').className = 'badge badge-green';
+      if (c.gate_access) {
+        document.getElementById('next-clean-sub').textContent = 'Please leave your gate open';
+      }
     } else if (c.next_clean_approx) {
       document.getElementById('next-clean').textContent = formatDate(c.next_clean_approx) + ' (approx)';
       document.getElementById('next-clean-badge').textContent = 'Date to be confirmed';
       document.getElementById('next-clean-badge').className = 'badge badge-blue';
-      document.getElementById('next-clean-sub').textContent = "We'll confirm your exact date closer to the time";
+      document.getElementById('next-clean-sub').textContent = 'We\'ll confirm your exact date closer to the time';
     } else {
       document.getElementById('next-clean').textContent = 'To be scheduled';
       document.getElementById('next-clean-badge').textContent = 'Pending';
@@ -501,6 +525,7 @@ async function init() {
     const status = statusMap[c.job_status] || statusMap['none'];
     document.getElementById('tracker-title').textContent = status[0];
     document.getElementById('tracker-sub').textContent = status[1];
+    renderTracker(c.job_status);
 
     const balance = parseFloat(c.outstanding_balance) || 0;
     currentBalance = balance;
@@ -521,7 +546,7 @@ async function init() {
 
       const overdueText = document.createElement('div');
       overdueText.className = 'overdue-text';
-      overdueText.textContent = 'Please pay within 48 hours of your clean.';
+      overdueText.textContent = 'Payment overdue — please pay to avoid service suspension';
 
       document.getElementById('payment-btn-wrap').appendChild(payBtn);
       document.getElementById('payment-btn-wrap').appendChild(overdueText);
@@ -537,64 +562,6 @@ async function init() {
   } catch (err) {
     console.error('Failed to load data:', err);
   }
-}
-
-function startStatusPolling() {
-  setInterval(async function() {
-    try {
-      var fresh = await loadStatusOnly();
-      if (!fresh || !fresh.customer) return;
-      var c = fresh.customer;
-      var status = c.job_status || 'none';
-      var statusMap = {
-        'not_scheduled': ['No clean today', 'Check back on your clean day'],
-        'on_the_way':    ["We're on our way! 🚐", "Get ready — we'll be with you soon"],
-        'next':          ["You're next! ⭐", "We're finishing up the job before yours"],
-        'in_progress':   ["We're cleaning now 🪟", "Sit back and relax!"],
-        'complete':      ['All done today ✅', 'Your windows are sparkling clean'],
-        'none':          ['No clean scheduled today', 'Check the tracker on your clean day']
-      };
-      var s = statusMap[status] || statusMap['none'];
-      document.getElementById('tracker-title').textContent = s[0];
-      document.getElementById('tracker-sub').textContent = s[1];
-
-      var balance = parseFloat(c.outstanding_balance) || 0;
-      var payCard = document.getElementById('payment-card');
-      if (balance > 0) {
-        payCard.classList.remove('payment-gold');
-        document.getElementById('payment-label').textContent = 'Outstanding payment';
-        document.getElementById('payment-title').textContent = '£' + balance.toFixed(2) + ' due';
-        document.getElementById('payment-badge').textContent = 'Overdue';
-        document.getElementById('payment-badge').className = 'badge badge-red';
-        var btnWrap = document.getElementById('payment-btn-wrap');
-        if (!document.getElementById('poll-pay-btn')) {
-          btnWrap.innerHTML = '';
-          var payBtn = document.createElement('button');
-          payBtn.id = 'poll-pay-btn';
-          payBtn.className = 'btn btn-overdue';
-          payBtn.style.marginTop = '10px';
-          payBtn.textContent = 'Pay now — £' + balance.toFixed(2);
-          payBtn.addEventListener('click', openPayPanel);
-          var overdueText = document.createElement('div');
-          overdueText.className = 'overdue-text';
-          overdueText.textContent = 'Please pay within 48 hours of your clean.';
-          btnWrap.appendChild(payBtn);
-          btnWrap.appendChild(overdueText);
-        }
-      } else {
-        payCard.classList.add('payment-gold');
-        document.getElementById('payment-label').textContent = 'Payment status';
-        document.getElementById('payment-title').textContent = 'All paid up ✅';
-        document.getElementById('payment-badge').textContent = 'Up to date';
-        document.getElementById('payment-badge').className = 'badge badge-green';
-      }
-
-      var todaySurveyKey = 'survey_done_' + CUSTOMER_ID + '_' + new Date().toISOString().substring(0, 10);
-      if (status === 'complete' && !localStorage.getItem(todaySurveyKey)) {
-        document.getElementById('survey-card').style.display = 'block';
-      }
-    } catch(e) {}
-  }, 30000);
 }
 
 async function loadBankDetails() {
@@ -635,8 +602,7 @@ async function selectFace(rating) {
   } catch (e) {
     console.error('Feedback save failed', e);
   }
-  var todaySurveyKey = 'survey_done_' + CUSTOMER_ID + '_' + new Date().toISOString().substring(0, 10);
-  localStorage.setItem(todaySurveyKey, '1');
+  localStorage.setItem('survey_done_' + CUSTOMER_ID, '1');
   if (rating === 4) {
     const reviewDone = localStorage.getItem('review_done_' + CUSTOMER_ID);
     if (!reviewDone) {
@@ -664,7 +630,6 @@ function closeReviewPopup() {
 }
 
 init();
-startStatusPolling();
 
 window.addEventListener('load', function() {
   if (needsPushPrompt()) {

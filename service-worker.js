@@ -1,7 +1,7 @@
 // ============================================================
 // service-worker.js — Rossington Window Cleaning PWA
 // ============================================================
-// v26 — Network first strategy
+// v27 — Network first strategy
 // Always tries to get fresh files from server first
 // Falls back to cache only if offline
 // ============================================================
