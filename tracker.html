@@ -160,20 +160,7 @@ async function init() {
     document.getElementById('next-clean').textContent = formatDate(job.next_clean_approx) || 'To be confirmed';
     document.getElementById('frequency').textContent = job.clean_frequency || 'Every 6 weeks';
 
-    var cleansAway = parseInt(job.cleans_away) || 0;
-    var wrap = document.getElementById('cleans-away-wrap');
-    if (cleansAway > 0 && job.status !== 'complete' && job.status !== 'in_progress') {
-      wrap.style.display = 'block';
-      var dots = '';
-      for (var d = 0; d < Math.min(cleansAway, 8); d++) {
-        dots += '<div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.1);"></div>';
-        if (d < cleansAway - 1 && d < 7) dots += '<div style="flex:1;height:2px;background:rgba(255,255,255,0.06);"></div>';
-      }
-      document.getElementById('cleans-dots').innerHTML = dots;
-      document.getElementById('cleans-away-label').textContent = cleansAway === 1 ? 'One clean before yours' : cleansAway + ' cleans before yours';
-    } else {
-      wrap.style.display = 'none';
-    }
+    renderTrackerDots(job);
   } catch (err) {
     console.error('Failed to load tracker:', err);
   }
@@ -198,23 +185,67 @@ setInterval(async function() {
     } else {
       iconEl.style.display = 'none';
     }
-    var cleansAway = parseInt(job.cleans_away) || 0;
-    var wrap = document.getElementById('cleans-away-wrap');
-    if (cleansAway > 0 && job.status !== 'complete' && job.status !== 'in_progress') {
-      wrap.style.display = 'block';
-      var dots = '';
-      for (var d = 0; d < Math.min(cleansAway, 8); d++) {
-        dots += '<div style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.1);"></div>';
-        if (d < cleansAway - 1 && d < 7) dots += '<div style="flex:1;height:2px;background:rgba(255,255,255,0.06);"></div>';
-      }
-      document.getElementById('cleans-dots').innerHTML = dots;
-      document.getElementById('cleans-away-label').textContent = cleansAway === 1 ? 'One clean before yours' : cleansAway + ' cleans before yours';
-    } else {
-      wrap.style.display = 'none';
-    }
+    renderTrackerDots(job);
   } catch(e) {}
 }, 30000);
 
+
+function renderTrackerDots(job) {
+  var total = parseInt(job.total_jobs_today) || 0;
+  var away  = parseInt(job.cleans_away) || 0;
+  var wrap  = document.getElementById('cleans-away-wrap');
+  var status = job.status || 'none';
+
+  if (total === 0 || (status === 'none' || status === 'not_scheduled')) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'block';
+  var myPosition = total - away - 1;
+  var dots = '';
+  var visibleTotal = myPosition + 1;
+
+  for (var i = 0; i < visibleTotal; i++) {
+    var colour, label;
+    if (i < myPosition) {
+      colour = '#7dc87d';
+      label  = 'Done';
+    } else {
+      if (status === 'complete') {
+        colour = '#7dc87d';
+        label  = 'Done';
+      } else if (status === 'in_progress') {
+        colour = '#D4AA28';
+        label  = 'Now';
+      } else {
+        colour = '#D4AA28';
+        label  = 'You';
+      }
+    }
+
+    dots += '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">' +
+      '<div style="width:14px;height:14px;border-radius:50%;background:' + colour + ';"></div>' +
+      '<div style="font-size:9px;color:' + colour + ';font-weight:600;">' + label + '</div>' +
+      '</div>';
+
+    if (i < visibleTotal - 1) {
+      dots += '<div style="flex:1;height:2px;background:rgba(255,255,255,0.06);margin-bottom:14px;"></div>';
+    }
+  }
+
+  document.getElementById('cleans-dots').innerHTML = dots;
+
+  if (status === 'complete') {
+    document.getElementById('cleans-away-label').textContent = 'Your clean is complete';
+  } else if (status === 'in_progress') {
+    document.getElementById('cleans-away-label').textContent = "We're cleaning your windows now!";
+  } else if (away === 0) {
+    document.getElementById('cleans-away-label').textContent = "You're next on the round";
+  } else {
+    document.getElementById('cleans-away-label').textContent = away === 1 ? 'One clean before yours' : away + ' cleans before yours';
+  }
+}
 function showLoader() { document.getElementById('loader').classList.remove('hidden'); }
 function hideLoader() { document.getElementById('loader').classList.add('hidden'); }
 </script>
