@@ -4,7 +4,9 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
 const CACHE_KEY = "rwc_customer_data";
-const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_TTL_NORMAL = 5 * 60 * 1000;
+const CACHE_TTL_CLEAN_DAY = 30 * 1000;
+const CACHE_TTL = CACHE_TTL_NORMAL;
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyA9NfQXYIRGdULIEv5jYaLLJtIusWc_j7w",
@@ -122,8 +124,8 @@ async function initFirebasePush() {
     }
 
     _fcmMessaging.onMessage(function(payload) {
-      var title = (payload.data && payload.data.title) ? payload.data.title : ((payload.notification && payload.notification.title) ? payload.notification.title : 'Rossington Window Cleaning');
-      var body = (payload.data && payload.data.body) ? payload.data.body : ((payload.notification && payload.notification.body) ? payload.notification.body : '');
+      var title = payload.notification ? payload.notification.title : 'Rossington Window Cleaning';
+      var body = payload.notification ? payload.notification.body : '';
       if (_fcmRegistration && _fcmRegistration.showNotification) {
         _fcmRegistration.showNotification(title, { body: body, icon: 'icon-192.png', badge: 'icon-192.png' });
       }
@@ -218,6 +220,14 @@ async function loadAllData(forceRefresh) {
   return data;
 }
 
+async function loadStatusOnly() {
+  var response = await fetch(API_URL + '?action=getAll&customer_id=' + CUSTOMER_ID);
+  if (!response.ok) return null;
+  var data = await response.json();
+  if (data.success) { setCache(data); }
+  return data;
+}
+
 function setCache(data) {
   try {
     sessionStorage.setItem(CACHE_KEY + "_" + CUSTOMER_ID, JSON.stringify({ timestamp: Date.now(), data: data }));
@@ -229,7 +239,8 @@ function getCache() {
     var raw = sessionStorage.getItem(CACHE_KEY + "_" + CUSTOMER_ID);
     if (!raw) return null;
     var entry = JSON.parse(raw);
-    if (Date.now() - entry.timestamp > CACHE_TTL) return null;
+    var ttl = entry.data && entry.data.tracker && entry.data.tracker.status && entry.data.tracker.status !== 'not_scheduled' && entry.data.tracker.status !== 'none' ? CACHE_TTL_CLEAN_DAY : CACHE_TTL_NORMAL;
+    if (Date.now() - entry.timestamp > ttl) return null;
     return entry.data;
   } catch(e) { return null; }
 }
