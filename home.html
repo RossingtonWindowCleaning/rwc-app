@@ -349,24 +349,7 @@ body {
     <div class="card-label">Today's progress tracker</div>
     <div class="card-title" id="tracker-title">Loading...</div>
     <div class="card-sub" id="tracker-sub"></div>
-    <div class="tracker">
-      <div class="tracker-dot done"></div>
-      <div class="tracker-line"></div>
-      <div class="tracker-dot done"></div>
-      <div class="tracker-line"></div>
-      <div class="tracker-dot active"></div>
-      <div class="tracker-line"></div>
-      <div class="tracker-dot waiting"></div>
-      <div class="tracker-line"></div>
-      <div class="tracker-dot waiting"></div>
-    </div>
-    <div class="tracker-labels">
-      <span>Done</span>
-      <span>Done</span>
-      <span>Now</span>
-      <span>Next</span>
-      <span>You</span>
-    </div>
+    <div id="cleans-away-label" style="margin-top:10px;font-size:13px;color:#D4AA28;font-weight:600;"></div>
   </div>
 
   <div class="card" id="payment-card">
@@ -501,6 +484,7 @@ async function init() {
     const status = statusMap[c.job_status] || statusMap['none'];
     document.getElementById('tracker-title').textContent = status[0];
     document.getElementById('tracker-sub').textContent = status[1];
+    updateCleansAwayLabel(data.tracker, c.job_status);
 
     const balance = parseFloat(c.outstanding_balance) || 0;
     currentBalance = balance;
@@ -539,6 +523,32 @@ async function init() {
   }
 }
 
+function updateCleansAwayLabel(tracker, status) {
+  var el = document.getElementById('cleans-away-label');
+  if (!el) return;
+  if (!tracker || !status || status === 'none' || status === 'not_scheduled') {
+    el.textContent = '';
+    return;
+  }
+  if (status === 'complete') {
+    el.textContent = 'Your clean is complete';
+    return;
+  }
+  if (status === 'in_progress') {
+    el.textContent = "We're cleaning your windows now!";
+    return;
+  }
+  var away = parseInt(tracker.cleans_away);
+  if (isNaN(away)) { el.textContent = ''; return; }
+  if (away === 0) {
+    el.textContent = "You're next on the round";
+  } else if (away === 1) {
+    el.textContent = 'One clean before yours';
+  } else {
+    el.textContent = away + ' cleans before yours';
+  }
+}
+
 function startStatusPolling() {
   setInterval(async function() {
     try {
@@ -557,6 +567,7 @@ function startStatusPolling() {
       var s = statusMap[status] || statusMap['none'];
       document.getElementById('tracker-title').textContent = s[0];
       document.getElementById('tracker-sub').textContent = s[1];
+      updateCleansAwayLabel(fresh.tracker, status);
 
       var balance = parseFloat(c.outstanding_balance) || 0;
       var payCard = document.getElementById('payment-card');
