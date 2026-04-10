@@ -1,16 +1,12 @@
 // ============================================================
 // service-worker.js — Rossington Window Cleaning PWA
 // ============================================================
-// v26 — Network first strategy
-// Always tries to get fresh files from server first
-// Falls back to cache only if offline
+// v27 — Data-only push payload to fix double notifications
 // ============================================================
 
-// Firebase Messaging — import compat libraries for service worker
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js');
 
-// Initialize Firebase in the service worker
 firebase.initializeApp({
   apiKey: "AIzaSyA9NfQXYIRGdULIEv5jYaLLJtIusWc_j7w",
   authDomain: "rossington-wc.firebaseapp.com",
@@ -20,23 +16,23 @@ firebase.initializeApp({
   appId: "1:228463613008:web:2eebd32515b37172efad55"
 });
 
-// Handle background push notifications
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage(function(payload) {
   console.log('[SW] Background message received:', payload);
 
-  const title = payload.notification ? payload.notification.title : (payload.data ? payload.data.title : 'Rossington Window Cleaning');
+  const title = (payload.data && payload.data.title) || 'Rossington Window Cleaning';
   const options = {
-    body: payload.notification ? payload.notification.body : (payload.data ? payload.data.body : ''),
+    body: (payload.data && payload.data.body) || '',
     icon: './icon-192.png',
-    badge: './icon-192.png'
+    badge: './icon-192.png',
+    tag: 'rwc-notification',
+    renotify: true
   };
 
   return self.registration.showNotification(title, options);
 });
 
-// Handle notification click — open the app
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   event.waitUntil(
@@ -57,7 +53,7 @@ self.addEventListener('notificationclick', function(event) {
 // PWA Caching
 // ============================================================
 
-const CACHE_NAME = 'rwc-v26';
+const CACHE_NAME = 'rwc-v27';
 const APP_SHELL = [
   './home.html',
   './payments.html',
@@ -91,7 +87,6 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Let API calls and Firebase calls bypass the service worker completely
   if (url.hostname === 'script.google.com' ||
       url.hostname.includes('googleapis.com') ||
       url.hostname.includes('gstatic.com') ||
@@ -100,18 +95,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Network first — always try to get fresh files from server
-  // Falls back to cache only if the user is offline
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Save a fresh copy to cache in the background
         const clone = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         return response;
       })
       .catch(() => {
-        // Network failed — serve from cache so app works offline
         return caches.match(event.request);
       })
   );
