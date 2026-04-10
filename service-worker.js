@@ -1,7 +1,8 @@
 // ============================================================
 // service-worker.js — Rossington Window Cleaning PWA
 // ============================================================
-// v27 — Data-only push payload to fix double notifications
+// v28 — FCM auto-displays notification payload
+// No onBackgroundMessage handler to avoid double notifications
 // ============================================================
 
 importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js');
@@ -16,22 +17,7 @@ firebase.initializeApp({
   appId: "1:228463613008:web:2eebd32515b37172efad55"
 });
 
-const messaging = firebase.messaging();
-
-messaging.onBackgroundMessage(function(payload) {
-  console.log('[SW] Background message received:', payload);
-
-  const title = (payload.data && payload.data.title) || 'Rossington Window Cleaning';
-  const options = {
-    body: (payload.data && payload.data.body) || '',
-    icon: './icon-192.png',
-    badge: './icon-192.png',
-    tag: 'rwc-notification',
-    renotify: true
-  };
-
-  return self.registration.showNotification(title, options);
-});
+firebase.messaging();
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
@@ -53,7 +39,7 @@ self.addEventListener('notificationclick', function(event) {
 // PWA Caching
 // ============================================================
 
-const CACHE_NAME = 'rwc-v27';
+const CACHE_NAME = 'rwc-v28';
 const APP_SHELL = [
   './home.html',
   './payments.html',
