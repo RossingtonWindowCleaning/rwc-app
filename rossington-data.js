@@ -1,5 +1,5 @@
 // ============================================================
-// rossington-data.js — v5.0
+// rossington-data.js — v5.1
 // ============================================================
 
 const API_URL = "https://script.google.com/macros/s/AKfycby2AqTodhGcy-CpowPzwaOjvTqCl-UoEBNX_ODPbknDlA9u8_PwNRrnrxT-x23vxz6X/exec";
@@ -177,12 +177,9 @@ async function getAndSaveToken(messaging, registration) {
 
     if (token) {
       console.log('FCM token obtained');
-      var savedToken = localStorage.getItem('fcm_token_' + CUSTOMER_ID);
-      if (savedToken !== token) {
-        await apiPost({ action: 'saveFcmToken', fcm_token: token });
-        localStorage.setItem('fcm_token_' + CUSTOMER_ID, token);
-        console.log('FCM token saved to server');
-      }
+      await apiPost({ action: 'saveFcmToken', fcm_token: token });
+      localStorage.setItem('fcm_token_' + CUSTOMER_ID, token);
+      console.log('FCM token saved to server');
     }
   } catch (e) {
     console.log('FCM token error:', e);
