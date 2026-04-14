@@ -1440,19 +1440,23 @@ function loadEnquiries() {
       return;
     }
     el.innerHTML = data.enquiries.map(function(enq) {
-      return '<div class="job-row" id="enq-' + enq.referral_id + '" style="flex-wrap:wrap;align-items:flex-start;gap:10px;padding:14px 0;">' +
-        '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:14px;font-weight:600;">' + enq.referred_address + '</div>' +
-        '<div style="font-size:12px;color:#4a7aaa;margin-top:3px;">' + enq.referred_phone + '</div>' +
-        '<div style="font-size:11px;color:#4a7aaa;margin-top:5px;">Referred by <span style="color:#D4AA28;">' + enq.referring_name + '</span></div>' +
-        '<div style="font-size:11px;color:#4a7aaa;">' + (formatDate(enq.date_submitted) || enq.date_submitted) + '</div>' +
-        '</div>' +
-        '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">' +
-        (enq.confirmed ? '<span class="badge badge-green">Confirmed ✓</span>' : '<span class="badge badge-amber">Pending</span>') +
-        '<button class="btn btn-green" style="font-size:11px;padding:6px 10px;white-space:nowrap;" onclick="convertToCustomer('' + enq.referral_id + '','' + encodeURIComponent(enq.referred_address) + '','' + encodeURIComponent(enq.referred_phone) + '')">+ Add customer</button>' +
-        '<button class="btn btn-red" style="font-size:11px;padding:6px 10px;" onclick="removeEnquiry('' + enq.referral_id + '')">Remove</button>' +
-        '</div>' +
-        '</div>';
+      var addr = encodeURIComponent(enq.referred_address);
+      var phone = encodeURIComponent(enq.referred_phone);
+      var rid = enq.referral_id;
+      var statusBadge = enq.confirmed ? '<span class="badge badge-green">Confirmed ✓</span>' : '<span class="badge badge-amber">Pending</span>';
+      var addBtn = '<button class="btn btn-green" style="font-size:11px;padding:6px 10px;" onclick="convertToCustomer(this)" data-rid="' + rid + '" data-addr="' + addr + '" data-phone="' + phone + '">+ Add customer</button>';
+      var removeBtn = '<button class="btn btn-red" style="font-size:11px;padding:6px 10px;" onclick="removeEnquiry(this)" data-rid="' + rid + '">Remove</button>';
+      var html = '<div class="job-row" id="enq-' + rid + '" style="flex-wrap:wrap;align-items:flex-start;gap:10px;padding:14px 0;">';
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<div style="font-size:14px;font-weight:600;">' + enq.referred_address + '</div>';
+      html += '<div style="font-size:12px;color:#4a7aaa;margin-top:3px;">' + enq.referred_phone + '</div>';
+      html += '<div style="font-size:11px;color:#4a7aaa;margin-top:5px;">Referred by <span style="color:#D4AA28;">' + enq.referring_name + '</span></div>';
+      html += '<div style="font-size:11px;color:#4a7aaa;">' + (formatDate(enq.date_submitted) || enq.date_submitted) + '</div>';
+      html += '</div>';
+      html += '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">';
+      html += statusBadge + addBtn + removeBtn;
+      html += '</div></div>';
+      return html;
     }).join('');
   }).catch(function() {
     document.getElementById('enquiries-loader').style.display = 'none';
@@ -1461,9 +1465,9 @@ function loadEnquiries() {
   });
 }
 
-function convertToCustomer(referralId, encodedAddress, encodedPhone) {
-  var address = decodeURIComponent(encodedAddress);
-  var phone = decodeURIComponent(encodedPhone);
+function convertToCustomer(btn) {
+  var address = decodeURIComponent(btn.getAttribute('data-addr'));
+  var phone = decodeURIComponent(btn.getAttribute('data-phone'));
   showTab('customers');
   openAddCustomer();
   setTimeout(function() {
@@ -1472,7 +1476,8 @@ function convertToCustomer(referralId, encodedAddress, encodedPhone) {
   }, 100);
 }
 
-async function removeEnquiry(referralId) {
+async function removeEnquiry(btn) {
+  var referralId = btn.getAttribute('data-rid');
   if (!confirm('Remove this referral lead?')) return;
   try {
     var result = await apiPost({ action: 'removeEnquiry', referral_id: referralId });
