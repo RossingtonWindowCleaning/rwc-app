@@ -386,7 +386,7 @@ body {
     </div>
 
     <div class="card">
-      <div class="card-label">Today's jobs</div>
+      <div class="card-label" id="todays-jobs-label">Today's jobs</div>
       <div id="todays-jobs"><div style="color:#4a7aaa;font-size:13px;">No jobs scheduled for today</div></div>
     </div>
 
@@ -806,12 +806,15 @@ function renderTodaysJobsWithLogic(jobs) {
     if (idx === firstActiveIdx && j.job_status !== 'in_progress' && j.job_status !== 'complete') {
       btn = getStartCleanButton(j.customer_id);
     }
-    return '<div class="job-row" data-id="' + j.customer_id + '">' +
+    var handle = jobs.length > 1 ? '<span style="font-size:22px;color:#4a7aaa;padding:0 14px 0 0;cursor:grab;touch-action:none;line-height:1;user-select:none;flex-shrink:0;">&#9776;</span>' : '';
+    return '<div class="job-row" data-id="' + j.customer_id + '" style="touch-action:none;">' +
+      handle +
       '<div onclick="openCustomerById(\'' + j.customer_id + '\')" style="cursor:pointer;flex:1;">' +
       '<div class="job-name">' + j.first_name + ' ' + j.last_name + '</div>' +
       '<div class="job-address">' + j.address_line_1 + '</div></div>' +
       '<div class="job-actions">' + btn + '</div></div>';
   }).join('') + '</div>';
+  if (jobs.length > 1) initDragSort('todays-jobs-list', saveTodaysOrder);
 }
 
 async function updateStatus(customerId, newStatus, btn) {
@@ -1291,6 +1294,24 @@ function showDayJobs(dateStr, jobs) {
     initDragSort('day-jobs-sortable', saveDayOrder);
   }
   card.style.display = 'block';
+}
+
+function saveTodaysOrder() {
+  var label = document.getElementById('todays-jobs-label');
+  if (label) label.textContent = 'Saving...';
+  var items = document.querySelectorAll('#todays-jobs-list .job-row');
+  var order = Array.from(items).map(function(el) { return el.getAttribute('data-id'); });
+  apiPost({ action: 'saveJobOrder', order: order }).then(function(result) {
+    if (label) {
+      label.textContent = result && result.success ? "Today's jobs — saved ✓" : "Today's jobs — save failed";
+      setTimeout(function() { label.textContent = "Today's jobs"; }, 2000);
+    }
+  }).catch(function() {
+    if (label) {
+      label.textContent = "Today's jobs — save failed";
+      setTimeout(function() { label.textContent = "Today's jobs"; }, 2000);
+    }
+  });
 }
 
 function saveDayOrder() {
