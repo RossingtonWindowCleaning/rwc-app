@@ -386,7 +386,7 @@ body {
     </div>
 
     <div class="card">
-      <div class="card-label" id="todays-jobs-label">Today's jobs</div>
+      <div class="card-label">Today's jobs</div>
       <div id="todays-jobs"><div style="color:#4a7aaa;font-size:13px;">No jobs scheduled for today</div></div>
     </div>
 
@@ -451,9 +451,12 @@ body {
 
 <!-- ==================== ENQUIRIES TAB ==================== -->
 <div class="tab" id="tab-enquiries">
-  <div class="card">
-    <div class="card-label">Coming soon</div>
-    <div style="color:#4a7aaa;font-size:13px;">Enquiries page — handle new customer enquiries</div>
+  <div id="enquiries-loader" class="loader"><div class="spinner"></div>Loading...</div>
+  <div id="enquiries-content" style="display:none;">
+    <div class="card">
+      <div class="card-label">Referral leads</div>
+      <div id="enquiries-list"><div style="color:#4a7aaa;font-size:13px;">No referral leads yet</div></div>
+    </div>
   </div>
 </div>
 
@@ -706,6 +709,9 @@ function showTab(name) {
   if (name === 'schedule') {
     loadSchedule();
   }
+  if (name === 'enquiries') {
+    loadEnquiries();
+  }
 }
 
 // ============================================================
@@ -806,15 +812,12 @@ function renderTodaysJobsWithLogic(jobs) {
     if (idx === firstActiveIdx && j.job_status !== 'in_progress' && j.job_status !== 'complete') {
       btn = getStartCleanButton(j.customer_id);
     }
-    var handle = jobs.length > 1 ? '<span style="font-size:22px;color:#4a7aaa;padding:0 14px 0 0;cursor:grab;touch-action:none;line-height:1;user-select:none;flex-shrink:0;">&#9776;</span>' : '';
-    return '<div class="job-row" data-id="' + j.customer_id + '" style="touch-action:none;">' +
-      handle +
+    return '<div class="job-row" data-id="' + j.customer_id + '">' +
       '<div onclick="openCustomerById(\'' + j.customer_id + '\')" style="cursor:pointer;flex:1;">' +
       '<div class="job-name">' + j.first_name + ' ' + j.last_name + '</div>' +
       '<div class="job-address">' + j.address_line_1 + '</div></div>' +
       '<div class="job-actions">' + btn + '</div></div>';
   }).join('') + '</div>';
-  if (jobs.length > 1) initDragSort('todays-jobs-list', saveTodaysOrder);
 }
 
 async function updateStatus(customerId, newStatus, btn) {
@@ -1296,24 +1299,6 @@ function showDayJobs(dateStr, jobs) {
   card.style.display = 'block';
 }
 
-function saveTodaysOrder() {
-  var label = document.getElementById('todays-jobs-label');
-  if (label) label.textContent = 'Saving...';
-  var items = document.querySelectorAll('#todays-jobs-list .job-row');
-  var order = Array.from(items).map(function(el) { return el.getAttribute('data-id'); });
-  apiPost({ action: 'saveJobOrder', order: order }).then(function(result) {
-    if (label) {
-      label.textContent = result && result.success ? "Today's jobs — saved ✓" : "Today's jobs — save failed";
-      setTimeout(function() { label.textContent = "Today's jobs"; }, 2000);
-    }
-  }).catch(function() {
-    if (label) {
-      label.textContent = "Today's jobs — save failed";
-      setTimeout(function() { label.textContent = "Today's jobs"; }, 2000);
-    }
-  });
-}
-
 function saveDayOrder() {
   var items = document.querySelectorAll('#day-jobs-sortable .job-row');
   var order = Array.from(items).map(function(el) { return el.getAttribute('data-id'); });
@@ -1441,6 +1426,69 @@ function openSetDateModal(customerId, currentDate) {
       alert('Date saved!');
     } else { alert('Something went wrong. Please try again.'); }
   });
+}
+
+function loadEnquiries() {
+  document.getElementById('enquiries-loader').style.display = 'block';
+  document.getElementById('enquiries-content').style.display = 'none';
+  apiGet({ action: 'getEnquiries' }).then(function(data) {
+    document.getElementById('enquiries-loader').style.display = 'none';
+    document.getElementById('enquiries-content').style.display = 'block';
+    var el = document.getElementById('enquiries-list');
+    if (!data.success || !data.enquiries || !data.enquiries.length) {
+      el.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No referral leads yet</div>';
+      return;
+    }
+    el.innerHTML = data.enquiries.map(function(enq) {
+      return '<div class="job-row" id="enq-' + enq.referral_id + '" style="flex-wrap:wrap;align-items:flex-start;gap:10px;padding:14px 0;">' +
+        '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:14px;font-weight:600;">' + enq.referred_address + '</div>' +
+        '<div style="font-size:12px;color:#4a7aaa;margin-top:3px;">' + enq.referred_phone + '</div>' +
+        '<div style="font-size:11px;color:#4a7aaa;margin-top:5px;">Referred by <span style="color:#D4AA28;">' + enq.referring_name + '</span></div>' +
+        '<div style="font-size:11px;color:#4a7aaa;">' + (formatDate(enq.date_submitted) || enq.date_submitted) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">' +
+        (enq.confirmed ? '<span class="badge badge-green">Confirmed ✓</span>' : '<span class="badge badge-amber">Pending</span>') +
+        '<button class="btn btn-green" style="font-size:11px;padding:6px 10px;white-space:nowrap;" onclick="convertToCustomer('' + enq.referral_id + '','' + encodeURIComponent(enq.referred_address) + '','' + encodeURIComponent(enq.referred_phone) + '')">+ Add customer</button>' +
+        '<button class="btn btn-red" style="font-size:11px;padding:6px 10px;" onclick="removeEnquiry('' + enq.referral_id + '')">Remove</button>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  }).catch(function() {
+    document.getElementById('enquiries-loader').style.display = 'none';
+    document.getElementById('enquiries-content').style.display = 'block';
+    document.getElementById('enquiries-list').innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Failed to load. Check your connection.</div>';
+  });
+}
+
+function convertToCustomer(referralId, encodedAddress, encodedPhone) {
+  var address = decodeURIComponent(encodedAddress);
+  var phone = decodeURIComponent(encodedPhone);
+  showTab('customers');
+  openAddCustomer();
+  setTimeout(function() {
+    document.getElementById('new-address1').value = address;
+    document.getElementById('new-phone').value = phone;
+  }, 100);
+}
+
+async function removeEnquiry(referralId) {
+  if (!confirm('Remove this referral lead?')) return;
+  try {
+    var result = await apiPost({ action: 'removeEnquiry', referral_id: referralId });
+    if (result.success) {
+      var el = document.getElementById('enq-' + referralId);
+      if (el) el.remove();
+      var list = document.getElementById('enquiries-list');
+      if (!list.querySelector('.job-row')) {
+        list.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No referral leads yet</div>';
+      }
+    } else {
+      alert('Something went wrong. Please try again.');
+    }
+  } catch(e) {
+    alert('Connection error. Please try again.');
+  }
 }
 </script>
 </body>
