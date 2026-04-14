@@ -385,8 +385,19 @@ body {
       </div>
     </div>
 
+    <div class="card" id="referral-alert-card" style="display:none;background:rgba(212,170,40,0.08);border:1px solid rgba(212,170,40,0.3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="card-label" style="margin-bottom:6px;">Referral leads</div>
+          <div id="referral-alert-text" style="font-size:15px;font-weight:700;color:#e0ecf8;"></div>
+          <div style="font-size:12px;color:#4a7aaa;margin-top:3px;">Tap to view and action</div>
+        </div>
+        <button class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;" onclick="showTab('enquiries')">View leads</button>
+      </div>
+    </div>
+
     <div class="card">
-      <div class="card-label">Today's jobs</div>
+      <div class="card-label" id="todays-jobs-label">Today's jobs</div>
       <div id="todays-jobs"><div style="color:#4a7aaa;font-size:13px;">No jobs scheduled for today</div></div>
     </div>
 
@@ -751,6 +762,7 @@ async function loadDashboard() {
       renderTodaysJobs(data.todays_jobs || []);
       renderWeeklyJobs(data.weekly_jobs || []);
       renderPaymentNotifications(data.payment_notifications || []);
+      loadReferralAlertCount();
     }
   } catch(e) {
     document.getElementById('dashboard-loader').innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Failed to load. Check your connection.</div>';
@@ -1494,6 +1506,24 @@ async function removeEnquiry(btn) {
   } catch(e) {
     alert('Connection error. Please try again.');
   }
+}
+
+function loadReferralAlertCount() {
+  apiGet({ action: 'getEnquiries' }).then(function(data) {
+    var card = document.getElementById('referral-alert-card');
+    var text = document.getElementById('referral-alert-text');
+    if (!card || !text) return;
+    if (data.success && data.enquiries && data.enquiries.length > 0) {
+      var count = data.enquiries.length;
+      text.textContent = count + ' lead' + (count === 1 ? '' : 's') + ' waiting';
+      card.style.display = 'block';
+    } else {
+      card.style.display = 'none';
+    }
+  }).catch(function() {
+    var card = document.getElementById('referral-alert-card');
+    if (card) card.style.display = 'none';
+  });
 }
 </script>
 </body>
