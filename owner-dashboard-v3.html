@@ -327,6 +327,18 @@ body {
   outline: none;
 }
 .form-input:focus { border-color: #D4AA28; }
+select.form-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23D4AA28' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+select.form-input option {
+  background: #0f1e36;
+  color: #e0ecf8;
+}
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 .success-msg {
@@ -905,10 +917,12 @@ function renderTodaysJobsWithLogic(jobs) {
     if (idx === firstActiveIdx && j.job_status !== 'in_progress' && j.job_status !== 'complete') {
       btn = getStartCleanButton(j.customer_id);
     }
+    var jobType = j.job_type || '';
+    var jobTypeLine = jobType && jobType !== 'Window Cleaning Residential' ? '<div style="font-size:11px;color:#D4AA28;margin-top:3px;">' + jobType + '</div>' : '';
     return '<div class="job-row" data-id="' + j.customer_id + '">' +
       '<div onclick="openCustomerById(\'' + j.customer_id + '\')" style="cursor:pointer;flex:1;">' +
       '<div class="job-name">' + j.first_name + ' ' + j.last_name + '</div>' +
-      '<div class="job-address">' + j.address_line_1 + '</div></div>' +
+      '<div class="job-address">' + j.address_line_1 + '</div>' + jobTypeLine + '</div>' +
       '<div class="job-actions">' + btn + '</div></div>';
   }).join('') + '</div>';
 }
@@ -1513,11 +1527,13 @@ function showDayJobs(dateStr, jobs) {
     list.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No confirmed cleans on this date</div>';
   } else {
     list.innerHTML = '<div id="day-jobs-sortable">' + jobs.map(function(c) {
+      var jobType = c.job_type || 'Window Cleaning Residential';
       return '<div class="job-row" data-id="' + c.customer_id + '" style="cursor:grab;">' +
         '<span style="color:#4a7aaa;font-size:16px;margin-right:8px;">&#9776;</span>' +
         '<div onclick="openCustomerById(\'' + c.customer_id + '\')" style="cursor:pointer;flex:1;">' +
         '<div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
-        '<div style="font-size:12px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div></div>' +
+        '<div style="font-size:12px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div>' +
+        '<div style="font-size:11px;color:#D4AA28;margin-top:3px;">' + jobType + '</div></div>' +
         '<span style="font-size:12px;color:#D4AA28;font-weight:600;">&#163;' + parseFloat(c.regular_clean_price || 0).toFixed(2) + '</span>' +
         '</div>';
     }).join('') + '</div>';
