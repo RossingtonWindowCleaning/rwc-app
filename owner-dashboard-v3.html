@@ -379,9 +379,9 @@ body {
         <div class="stat-value" id="stat-cleans">0</div>
         <div class="stat-label">Cleans done</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" onclick="openOutstandingPanel()" style="cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(212,170,40,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
         <div class="stat-value" id="stat-outstanding">£0</div>
-        <div class="stat-label">Outstanding</div>
+        <div class="stat-label">Outstanding ›</div>
       </div>
     </div>
 
@@ -497,6 +497,21 @@ body {
     <span class="nav-icon">💷</span><span>HMRC</span>
   </button>
 </nav>
+
+<!-- ==================== OUTSTANDING PAYMENTS PANEL ==================== -->
+<div class="modal-overlay" id="outstanding-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+      <div>
+        <div class="modal-title">Outstanding payments</div>
+        <div class="modal-sub" id="outstanding-total">£0.00 owed</div>
+      </div>
+      <button class="btn btn-outline" onclick="closeModal('outstanding-modal')" style="font-size:18px;padding:4px 10px;">✕</button>
+    </div>
+    <div id="outstanding-list"><div style="color:#4a7aaa;font-size:13px;">No outstanding payments</div></div>
+  </div>
+</div>
 
 <!-- ==================== CUSTOMER DETAIL MODAL ==================== -->
 <div class="modal-overlay" id="customer-modal">
@@ -847,9 +862,54 @@ async function markPaid(customerId, btn) {
   btn.textContent = '...';
   try {
     var result = await apiPost({ action: 'markPaid', customer_id: customerId });
-    if (result.success) { loadDashboard(); }
+    if (result.success) {
+      loadDashboard();
+      if (document.getElementById('outstanding-modal').classList.contains('open')) {
+        setTimeout(refreshOutstandingPanel, 500);
+      }
+    }
     else { btn.disabled = false; btn.textContent = 'Retry'; }
   } catch(e) { btn.disabled = false; btn.textContent = 'Error'; }
+}
+
+function openOutstandingPanel() {
+  document.getElementById('outstanding-modal').classList.add('open');
+  refreshOutstandingPanel();
+}
+
+async function refreshOutstandingPanel() {
+  var listEl = document.getElementById('outstanding-list');
+  var totalEl = document.getElementById('outstanding-total');
+  listEl.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">Loading...</div>';
+  try {
+    var data = await apiGet({ action: 'getOwnerSummary' });
+    if (!data.success) {
+      listEl.innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Failed to load</div>';
+      return;
+    }
+    var owed = data.payment_notifications || [];
+    totalEl.textContent = '£' + (data.total_outstanding || 0).toFixed(2) + ' owed';
+    if (!owed.length) {
+      listEl.innerHTML = '<div style="color:#7dc87d;font-size:13px;padding:20px 0;text-align:center;">✓ All paid up — nothing outstanding</div>';
+      return;
+    }
+    listEl.innerHTML = owed.map(function(c) {
+      var bal = parseFloat(c.outstanding_balance) || 0;
+      var method = c.payment_method || 'Bank Transfer';
+      return '<div class="job-row" id="owed-' + c.customer_id + '" style="flex-wrap:wrap;align-items:flex-start;gap:10px;padding:14px 0;">' +
+        '<div style="flex:1;min-width:0;cursor:pointer;" onclick="closeModal(\'outstanding-modal\');openCustomerById(\'' + c.customer_id + '\')">' +
+        '<div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
+        '<div style="font-size:12px;color:#4a7aaa;margin-top:3px;">' + c.address_line_1 + '</div>' +
+        '<div style="font-size:11px;color:#4a7aaa;margin-top:5px;">Will log as: <span style="color:#D4AA28;">' + method + '</span></div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">' +
+        '<span style="font-size:15px;font-weight:700;color:#ff8a8a;">£' + bal.toFixed(2) + '</span>' +
+        '<button class="btn btn-green" style="font-size:11px;padding:6px 10px;" onclick="markPaid(\'' + c.customer_id + '\', this)">Mark paid</button>' +
+        '</div></div>';
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Connection error</div>';
+  }
 }
 
 // ============================================================
