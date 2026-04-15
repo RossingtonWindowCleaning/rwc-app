@@ -488,9 +488,175 @@ select.form-input option {
 
 <!-- ==================== HMRC TAB ==================== -->
 <div class="tab" id="tab-hmrc">
-  <div class="card">
-    <div class="card-label">Coming soon</div>
-    <div style="color:#4a7aaa;font-size:13px;">HMRC page — income tracking</div>
+  <div id="hmrc-loader" class="loader"><div class="spinner"></div>Loading...</div>
+  <div id="hmrc-content" style="display:none;">
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="card-label" style="margin-bottom:0;">Year overview</div>
+        <span id="hmrc-tax-year" style="font-size:11px;color:#D4AA28;">2026/27</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div id="hmrc-pie-wrap" style="flex-shrink:0;"></div>
+        <div style="flex:1;font-size:13px;">
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="color:#7dc87d;">● Income</span>
+            <span style="color:#e0ecf8;font-weight:600;" id="hmrc-income">£0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:4px 0;">
+            <span style="color:#ff8a8a;">● Expenses</span>
+            <span style="color:#e0ecf8;font-weight:600;" id="hmrc-expenses">£0.00</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0 4px;border-top:1px solid rgba(255,255,255,0.08);margin-top:4px;">
+            <span style="color:#D4AA28;font-weight:600;">Profit</span>
+            <span style="color:#D4AA28;font-weight:700;" id="hmrc-profit">£0.00</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn btn-outline btn-full" style="margin-top:14px;" onclick="calculateTax()">Calculate tax estimate</button>
+      <div id="hmrc-tax-result" style="display:none;margin-top:12px;padding:12px;background:rgba(212,170,40,0.08);border:1px solid rgba(212,170,40,0.2);border-radius:10px;">
+        <div style="font-size:12px;color:#4a7aaa;margin-bottom:6px;">Projected year-end tax estimate</div>
+        <div style="font-size:20px;font-weight:700;color:#D4AA28;" id="hmrc-tax-amount">£0.00</div>
+        <div style="font-size:11px;color:#4a7aaa;margin-top:6px;line-height:1.4;" id="hmrc-tax-breakdown"></div>
+        <div style="font-size:10px;color:#4a7aaa;margin-top:8px;font-style:italic;">Estimate only — based on this app's data. Does not account for other income sources or allowances.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">By month</div>
+      <div id="hmrc-months-list"><div style="color:#4a7aaa;font-size:13px;">No transactions yet</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Log an expense</div>
+      <div class="form-group">
+        <label class="form-label">Date *</label>
+        <input class="form-input" id="exp-date" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <input class="form-input" id="exp-description" placeholder="e.g. Petrol — Tesco">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Category *</label>
+        <select class="form-input" id="exp-category">
+          <option value="Equipment & Tools">Equipment & Tools</option>
+          <option value="Van Purchase (AIA)">Van Purchase (AIA)</option>
+          <option value="Vehicle - Fuel">Vehicle - Fuel</option>
+          <option value="Vehicle - MOT & Tax">Vehicle - MOT & Tax</option>
+          <option value="Vehicle - Insurance">Vehicle - Insurance</option>
+          <option value="Vehicle - Repairs & Servicing">Vehicle - Repairs & Servicing</option>
+          <option value="Cleaning Chemicals & Supplies">Cleaning Chemicals & Supplies</option>
+          <option value="Workwear & PPE">Workwear & PPE</option>
+          <option value="Mobile Phone">Mobile Phone</option>
+          <option value="Marketing & Advertising">Marketing & Advertising</option>
+          <option value="Website & Domain">Website & Domain</option>
+          <option value="Public Liability Insurance">Public Liability Insurance</option>
+          <option value="Other Allowable">Other Allowable</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount (£) *</label>
+          <input class="form-input" id="exp-amount" type="number" step="0.01" placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Payment method *</label>
+          <select class="form-input" id="exp-method">
+            <option value="Bank Transfer">Bank Transfer</option>
+            <option value="Card">Card</option>
+            <option value="Cash">Cash</option>
+            <option value="Credit Card">Credit Card</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes / receipt ref (optional)</label>
+        <input class="form-input" id="exp-notes" placeholder="e.g. Amazon order #12345">
+      </div>
+      <div id="exp-success" class="success-msg"></div>
+      <div id="exp-error" class="error-msg"></div>
+      <button class="btn btn-gold btn-full" id="exp-btn" onclick="submitExpense()">Save expense</button>
+    </div>
+
+    <div class="card" style="cursor:pointer;" onclick="openFilingGuide()">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="card-label" style="margin-bottom:4px;">How to file your Self Assessment</div>
+          <div style="font-size:12px;color:#4a7aaa;">Step-by-step guide for end of tax year</div>
+        </div>
+        <span style="font-size:20px;color:#D4AA28;">›</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ==================== FILING GUIDE MODAL ==================== -->
+<div class="modal-overlay" id="filing-guide-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title">Filing your Self Assessment</div>
+      <button class="btn btn-outline" onclick="closeModal('filing-guide-modal')" style="font-size:18px;padding:4px 10px;">✕</button>
+    </div>
+    <div style="font-size:13px;line-height:1.6;color:#e0ecf8;">
+
+      <div class="modal-section-label">Key deadlines</div>
+      <div style="background:rgba(212,170,40,0.08);border:1px solid rgba(212,170,40,0.2);border-radius:10px;padding:12px;margin-bottom:16px;">
+        <div style="margin-bottom:6px;"><span style="color:#D4AA28;font-weight:600;">5 April</span> — Tax year ends</div>
+        <div style="margin-bottom:6px;"><span style="color:#D4AA28;font-weight:600;">5 October</span> — Register for Self Assessment if first year</div>
+        <div style="margin-bottom:6px;"><span style="color:#D4AA28;font-weight:600;">31 October</span> — Paper return deadline</div>
+        <div style="margin-bottom:6px;"><span style="color:#D4AA28;font-weight:600;">31 January</span> — Online return + payment deadline</div>
+        <div><span style="color:#D4AA28;font-weight:600;">31 July</span> — Second payment on account (if applicable)</div>
+      </div>
+
+      <div class="modal-section-label">Step 1 — Register (first year only)</div>
+      <p style="margin-bottom:12px;">Go to gov.uk/register-for-self-assessment and register as a sole trader. You'll get a UTR (Unique Taxpayer Reference) by post within 10 working days. Keep this safe — you'll need it every year.</p>
+
+      <div class="modal-section-label">Step 2 — Gather your figures</div>
+      <p style="margin-bottom:8px;">Open your TRANSACTIONS sheet and use the P&L SUMMARY tab to get your totals for the tax year. You need:</p>
+      <ul style="padding-left:20px;margin-bottom:12px;color:#4a7aaa;">
+        <li style="margin-bottom:4px;">Total income (all INCOME rows)</li>
+        <li style="margin-bottom:4px;">Total expenses by category (each EXPENSE category summed)</li>
+        <li>Vehicle costs (separate fuel from insurance, MOT, repairs)</li>
+      </ul>
+
+      <div class="modal-section-label">Step 3 — Log into HMRC</div>
+      <p style="margin-bottom:12px;">Go to gov.uk/log-in-file-self-assessment-tax-return. Sign in with your Government Gateway ID. If you don't have one, create one — you'll need your UTR and National Insurance number.</p>
+
+      <div class="modal-section-label">Step 4 — Fill in the SA103 (self-employment) section</div>
+      <p style="margin-bottom:8px;">This is where your transaction data goes. Map your spreadsheet to these boxes:</p>
+      <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;">
+        <div style="margin-bottom:6px;"><span style="color:#D4AA28;">Box 9 (Turnover)</span> — Your total INCOME</div>
+        <div style="margin-bottom:6px;"><span style="color:#D4AA28;">Box 10 (Other income)</span> — Usually £0</div>
+        <div style="margin-bottom:6px;"><span style="color:#D4AA28;">Box 11–19 (Expenses)</span> — Your EXPENSE totals grouped by HMRC category</div>
+        <div><span style="color:#D4AA28;">Box 20 (Net profit)</span> — Income minus expenses</div>
+      </div>
+
+      <div class="modal-section-label">Step 5 — Cash basis vs Traditional accounting</div>
+      <p style="margin-bottom:12px;">Most window cleaners use <span style="color:#D4AA28;">cash basis</span> — record income when received, expenses when paid. This matches how this app logs things. Tick the cash basis box on your return.</p>
+
+      <div class="modal-section-label">Step 6 — Pay your tax</div>
+      <p style="margin-bottom:8px;">Once submitted, HMRC will tell you how much to pay. Pay by 31 January via:</p>
+      <ul style="padding-left:20px;margin-bottom:12px;color:#4a7aaa;">
+        <li style="margin-bottom:4px;">Bank transfer (fastest)</li>
+        <li style="margin-bottom:4px;">Direct debit</li>
+        <li>Online banking app</li>
+      </ul>
+      <p style="margin-bottom:12px;">If you owe more than £1,000, HMRC will also ask for "payments on account" toward next year's tax — half by 31 January, half by 31 July.</p>
+
+      <div class="modal-section-label">Tips</div>
+      <ul style="padding-left:20px;margin-bottom:12px;color:#4a7aaa;">
+        <li style="margin-bottom:6px;">Keep all receipts (paper or photo) for 5 years after submission</li>
+        <li style="margin-bottom:6px;">Set aside ~25% of profit each month into a separate tax savings account</li>
+        <li style="margin-bottom:6px;">If unsure, pay an accountant — usually £150–£300 for a sole trader return, fully tax-deductible</li>
+        <li>Don't leave it until January — start your return in May, takes the pressure off</li>
+      </ul>
+
+      <p style="font-size:11px;color:#4a7aaa;font-style:italic;margin-top:16px;">This guide is general information only, not personal tax advice. For complex situations consult HMRC or a qualified accountant.</p>
+    </div>
+    <button class="btn btn-outline btn-full" style="margin-top:16px;" onclick="closeModal('filing-guide-modal')">Close</button>
   </div>
 </div>
 
@@ -815,6 +981,9 @@ function showTab(name) {
   }
   if (name === 'enquiries') {
     loadEnquiries();
+  }
+  if (name === 'hmrc') {
+    loadHmrc();
   }
 }
 
@@ -1755,6 +1924,181 @@ function loadReferralAlertCount() {
     var card = document.getElementById('referral-alert-card');
     if (card) card.style.display = 'none';
   });
+}
+
+// ============================================================
+// HMRC TAB
+// ============================================================
+var hmrcData = null;
+
+async function loadHmrc() {
+  document.getElementById('hmrc-loader').style.display = 'block';
+  document.getElementById('hmrc-content').style.display = 'none';
+  document.getElementById('hmrc-tax-result').style.display = 'none';
+  document.getElementById('exp-date').value = new Date().toISOString().substring(0, 10);
+  try {
+    var data = await apiGet({ action: 'getHmrcSummary' });
+    document.getElementById('hmrc-loader').style.display = 'none';
+    document.getElementById('hmrc-content').style.display = 'block';
+    if (!data.success) {
+      document.getElementById('hmrc-months-list').innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Failed to load: ' + (data.error || 'unknown error') + '</div>';
+      return;
+    }
+    hmrcData = data;
+    document.getElementById('hmrc-tax-year').textContent = data.tax_year;
+    document.getElementById('hmrc-income').textContent = '£' + data.total_income.toFixed(2);
+    document.getElementById('hmrc-expenses').textContent = '£' + data.total_expenses.toFixed(2);
+    document.getElementById('hmrc-profit').textContent = '£' + data.profit.toFixed(2);
+    document.getElementById('hmrc-pie-wrap').innerHTML = drawPie(data.total_income, data.total_expenses, 90);
+    renderHmrcMonths(data.months);
+  } catch(e) {
+    document.getElementById('hmrc-loader').style.display = 'none';
+    document.getElementById('hmrc-content').style.display = 'block';
+    document.getElementById('hmrc-months-list').innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Connection error</div>';
+  }
+}
+
+function drawPie(income, expenses, size) {
+  var total = income + expenses;
+  var sz = size || 60;
+  var stroke = sz < 50 ? 6 : 8;
+  var r = (sz - stroke) / 2;
+  var c = sz / 2;
+  var circumference = 2 * Math.PI * r;
+  if (total === 0) {
+    return '<svg width="' + sz + '" height="' + sz + '" viewBox="0 0 ' + sz + ' ' + sz + '">' +
+      '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="' + stroke + '"/>' +
+      '</svg>';
+  }
+  var incomePct = income / total;
+  var incomeLen = circumference * incomePct;
+  return '<svg width="' + sz + '" height="' + sz + '" viewBox="0 0 ' + sz + ' ' + sz + '" style="transform:rotate(-90deg);">' +
+    '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="#A32D2D" stroke-width="' + stroke + '"/>' +
+    '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" fill="none" stroke="#27500A" stroke-width="' + stroke + '" stroke-dasharray="' + incomeLen + ' ' + circumference + '"/>' +
+    '</svg>';
+}
+
+function renderHmrcMonths(months) {
+  var el = document.getElementById('hmrc-months-list');
+  if (!months || !months.length) {
+    el.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No transactions yet</div>';
+    return;
+  }
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  el.innerHTML = months.map(function(m) {
+    var profitColor = m.profit >= 0 ? '#7dc87d' : '#ff8a8a';
+    var profitSign = m.profit >= 0 ? '+' : '−';
+    var profitAbs = Math.abs(m.profit).toFixed(2);
+    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;" onclick="alert(\'Monthly detail view coming in next update\')">' +
+      drawPie(m.income, m.expenses, 40) +
+      '<div style="flex:1;">' +
+      '<div style="font-size:14px;font-weight:600;color:#e0ecf8;">' + monthNames[m.month - 1] + ' ' + m.year + '</div>' +
+      '<div style="font-size:11px;color:#4a7aaa;margin-top:2px;">£' + m.income.toFixed(2) + ' in · £' + m.expenses.toFixed(2) + ' out</div>' +
+      '</div>' +
+      '<div style="font-size:14px;font-weight:600;color:' + profitColor + ';">' + profitSign + '£' + profitAbs + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function calculateTax() {
+  if (!hmrcData) return;
+  var monthsWithData = hmrcData.months.length;
+  if (monthsWithData === 0) {
+    alert('No data yet — log some income and expenses first.');
+    return;
+  }
+  var avgMonthlyProfit = hmrcData.profit / monthsWithData;
+  var projectedProfit = avgMonthlyProfit * 12;
+  var personalAllowance = 12570;
+  var basicBand = 50270;
+  var incomeTax = 0;
+  var class4Ni = 0;
+  var class2Ni = 0;
+  if (projectedProfit > personalAllowance) {
+    var taxable = projectedProfit - personalAllowance;
+    if (projectedProfit <= basicBand) {
+      incomeTax = taxable * 0.20;
+    } else {
+      incomeTax = (basicBand - personalAllowance) * 0.20 + (projectedProfit - basicBand) * 0.40;
+    }
+  }
+  var ni4Threshold = 12570;
+  if (projectedProfit > ni4Threshold) {
+    var ni4Taxable = projectedProfit - ni4Threshold;
+    if (projectedProfit <= basicBand) {
+      class4Ni = ni4Taxable * 0.06;
+    } else {
+      class4Ni = (basicBand - ni4Threshold) * 0.06 + (projectedProfit - basicBand) * 0.02;
+    }
+  }
+  if (projectedProfit > 6725) {
+    class2Ni = 3.45 * 52;
+  }
+  var totalTax = incomeTax + class4Ni + class2Ni;
+  document.getElementById('hmrc-tax-amount').textContent = '£' + totalTax.toFixed(2);
+  var breakdown = 'Based on £' + projectedProfit.toFixed(0) + ' projected profit (£' + avgMonthlyProfit.toFixed(0) + '/mo × 12)<br>';
+  breakdown += 'Income tax: £' + incomeTax.toFixed(2) + ' · Class 4 NI: £' + class4Ni.toFixed(2);
+  if (class2Ni > 0) breakdown += ' · Class 2 NI: £' + class2Ni.toFixed(2);
+  document.getElementById('hmrc-tax-breakdown').innerHTML = breakdown;
+  document.getElementById('hmrc-tax-result').style.display = 'block';
+}
+
+async function submitExpense() {
+  var btn = document.getElementById('exp-btn');
+  var date = document.getElementById('exp-date').value;
+  var description = document.getElementById('exp-description').value.trim();
+  var category = document.getElementById('exp-category').value;
+  var amount = document.getElementById('exp-amount').value;
+  var method = document.getElementById('exp-method').value;
+  var notes = document.getElementById('exp-notes').value.trim();
+
+  document.getElementById('exp-success').style.display = 'none';
+  document.getElementById('exp-error').style.display = 'none';
+
+  if (!date || !description || !category || !amount) {
+    document.getElementById('exp-error').textContent = 'Please fill in date, description, category and amount.';
+    document.getElementById('exp-error').style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    var result = await apiPost({
+      action: 'logExpense',
+      date: date,
+      description: description,
+      category: category,
+      amount: amount,
+      method: method,
+      notes: notes
+    });
+    if (result.success) {
+      document.getElementById('exp-success').textContent = '✅ Expense logged: £' + parseFloat(amount).toFixed(2) + ' — ' + category;
+      document.getElementById('exp-success').style.display = 'block';
+      document.getElementById('exp-description').value = '';
+      document.getElementById('exp-amount').value = '';
+      document.getElementById('exp-notes').value = '';
+      btn.disabled = false;
+      btn.textContent = 'Save expense';
+      loadHmrc();
+    } else {
+      document.getElementById('exp-error').textContent = result.error || 'Something went wrong.';
+      document.getElementById('exp-error').style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Save expense';
+    }
+  } catch(e) {
+    document.getElementById('exp-error').textContent = 'Connection error. Please try again.';
+    document.getElementById('exp-error').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Save expense';
+  }
+}
+
+function openFilingGuide() {
+  document.getElementById('filing-guide-modal').classList.add('open');
 }
 </script>
 </body>
