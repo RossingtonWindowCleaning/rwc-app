@@ -450,7 +450,10 @@ body {
   </div>
 
   <div class="card" id="cal-day-card" style="display:none;">
-    <div class="card-label" id="cal-day-title"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="card-label" id="cal-day-title" style="margin-bottom:0;"></div>
+      <button class="btn btn-gold" style="font-size:11px;padding:6px 10px;" onclick="openAddJob()">+ Add job</button>
+    </div>
     <div id="cal-day-jobs"></div>
   </div>
 
@@ -696,6 +699,69 @@ body {
 
     <button class="btn btn-gold btn-full" id="add-btn" onclick="submitNewCustomer()">Add customer</button>
     <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="closeModal('add-customer-modal')">Cancel</button>
+  </div>
+</div>
+
+<!-- ==================== ADD JOB MODAL ==================== -->
+<div class="modal-overlay" id="add-job-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div>
+        <div class="modal-title">Add job</div>
+        <div class="modal-sub" id="add-job-date-label"></div>
+      </div>
+      <button class="btn btn-outline" onclick="closeModal('add-job-modal')" style="font-size:18px;padding:4px 10px;">✕</button>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">First name *</label>
+        <input class="form-input" id="job-firstname" placeholder="First name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last name *</label>
+        <input class="form-input" id="job-lastname" placeholder="Last name">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Address line 1 *</label>
+      <input class="form-input" id="job-address1" placeholder="House number and street">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Town *</label>
+        <input class="form-input" id="job-town" placeholder="Town">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Postcode</label>
+        <input class="form-input" id="job-postcode" placeholder="DN11...">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Phone (optional)</label>
+      <input class="form-input" id="job-phone" type="tel" placeholder="07...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Job type *</label>
+      <select class="form-input" id="job-type">
+        <option value="Window Cleaning Residential">Window Cleaning Residential</option>
+        <option value="Window Cleaning Commercial">Window Cleaning Commercial</option>
+        <option value="Fascia/Soffit">Fascia/Soffit</option>
+        <option value="Conservatory">Conservatory</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Price (£) *</label>
+      <input class="form-input" id="job-price" type="number" step="0.01" placeholder="0.00">
+    </div>
+
+    <div id="add-job-success" class="success-msg"></div>
+    <div id="add-job-error" class="error-msg"></div>
+
+    <button class="btn btn-gold btn-full" id="add-job-btn" onclick="submitNewJob()">Save job</button>
+    <button class="btn btn-outline btn-full" style="margin-top:8px;" onclick="closeModal('add-job-modal')">Cancel</button>
   </div>
 </div>
 
@@ -1187,6 +1253,95 @@ async function submitNewCustomer() {
     document.getElementById('add-error').style.display = 'block';
     btn.disabled = false;
     btn.textContent = 'Add customer';
+  }
+}
+
+// ADD JOB (one-off)
+function openAddJob() {
+  if (!currentDayDate) {
+    alert('Tap a day on the calendar first.');
+    return;
+  }
+  ['job-firstname','job-lastname','job-address1','job-town','job-postcode','job-phone','job-price'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('job-type').value = 'Window Cleaning Residential';
+  var d = new Date(currentDayDate + 'T12:00:00');
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('add-job-date-label').textContent = days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  document.getElementById('add-job-success').style.display = 'none';
+  document.getElementById('add-job-error').style.display = 'none';
+  document.getElementById('add-job-btn').disabled = false;
+  document.getElementById('add-job-btn').textContent = 'Save job';
+  document.getElementById('add-job-modal').classList.add('open');
+}
+
+async function submitNewJob() {
+  var btn = document.getElementById('add-job-btn');
+  var firstName = document.getElementById('job-firstname').value.trim();
+  var lastName = document.getElementById('job-lastname').value.trim();
+  var address1 = document.getElementById('job-address1').value.trim();
+  var town = document.getElementById('job-town').value.trim();
+  var postcode = document.getElementById('job-postcode').value.trim();
+  var phone = document.getElementById('job-phone').value.trim();
+  var jobType = document.getElementById('job-type').value;
+  var price = document.getElementById('job-price').value.trim();
+
+  document.getElementById('add-job-success').style.display = 'none';
+  document.getElementById('add-job-error').style.display = 'none';
+
+  if (!firstName || !lastName || !address1 || !town || !price) {
+    document.getElementById('add-job-error').textContent = 'Please fill in name, address, town and price.';
+    document.getElementById('add-job-error').style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    var result = await apiPost({
+      action: 'addCustomer',
+      first_name: firstName,
+      last_name: lastName,
+      address_line_1: address1,
+      address_line_2: '',
+      town: town,
+      postcode: postcode,
+      contact_number: phone,
+      email: '',
+      regular_clean_price: price,
+      first_clean_price: price,
+      clean_frequency: '',
+      notes: 'One-off job',
+      job_type: jobType,
+      payment_method: 'Bank Transfer',
+      next_clean_confirmed: currentDayDate
+    });
+
+    if (result.success) {
+      document.getElementById('add-job-success').textContent = '✅ Job saved for ' + firstName + ' ' + lastName;
+      document.getElementById('add-job-success').style.display = 'block';
+      btn.textContent = 'Saved!';
+      allCustomers = [];
+      scheduleCustomers = [];
+      loadSchedule();
+      loadDashboard();
+      setTimeout(function() {
+        closeModal('add-job-modal');
+      }, 1200);
+    } else {
+      document.getElementById('add-job-error').textContent = result.error || 'Something went wrong. Please try again.';
+      document.getElementById('add-job-error').style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Save job';
+    }
+  } catch(e) {
+    document.getElementById('add-job-error').textContent = 'Connection error. Please try again.';
+    document.getElementById('add-job-error').style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Save job';
   }
 }
 
