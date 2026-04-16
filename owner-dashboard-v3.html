@@ -694,6 +694,23 @@ select.form-input option {
   </div>
 </div>
 
+<!-- ==================== MONTH DETAIL MODAL ==================== -->
+<div class="modal-overlay" id="month-detail-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+      <div>
+        <div class="modal-title" id="month-detail-title">Month</div>
+        <div class="modal-sub" id="month-detail-sub">£0.00 profit</div>
+      </div>
+      <button class="btn btn-outline" onclick="closeModal('month-detail-modal')" style="font-size:18px;padding:4px 10px;">✕</button>
+    </div>
+    <div id="month-detail-body">
+      <div style="color:#4a7aaa;font-size:13px;padding:20px 0;text-align:center;">Loading...</div>
+    </div>
+  </div>
+</div>
+
 <!-- ==================== CUSTOMER DETAIL MODAL ==================== -->
 <div class="modal-overlay" id="customer-modal">
   <div class="modal">
@@ -1989,7 +2006,7 @@ function renderHmrcMonths(months) {
     var profitColor = m.profit >= 0 ? '#7dc87d' : '#ff8a8a';
     var profitSign = m.profit >= 0 ? '+' : '−';
     var profitAbs = Math.abs(m.profit).toFixed(2);
-    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;" onclick="alert(\'Monthly detail view coming in next update\')">' +
+    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;" onclick="openMonthDetail(' + m.year + ', ' + m.month + ')">' +
       drawPie(m.income, m.expenses, 40) +
       '<div style="flex:1;">' +
       '<div style="font-size:14px;font-weight:600;color:#e0ecf8;">' + monthNames[m.month - 1] + ' ' + m.year + '</div>' +
@@ -1999,6 +2016,123 @@ function renderHmrcMonths(months) {
       '</div>';
   }).join('');
 }
+
+// --- Month detail (Part 4 Stage 2) ---
+var currentMonthDetail = null;
+
+async function openMonthDetail(year, month) {
+  currentMonthDetail = { year: year, month: month };
+  var modal = document.getElementById('month-detail-modal');
+  modal.classList.add('open');
+  modal.onclick = function(e) { if (e.target === modal) modal.classList.remove('open'); };
+  var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('month-detail-title').textContent = monthNames[month - 1] + ' ' + year;
+  document.getElementById('month-detail-sub').textContent = 'Loading...';
+  document.getElementById('month-detail-body').innerHTML = '<div style="color:#4a7aaa;font-size:13px;padding:20px 0;text-align:center;">Loading...</div>';
+  await refreshMonthDetail();
+}
+
+async function refreshMonthDetail() {
+  if (!currentMonthDetail) return;
+  try {
+    var data = await apiPost({
+      action: 'getMonthTransactions',
+      year: currentMonthDetail.year,
+      month: currentMonthDetail.month
+    });
+    if (!data.success) {
+      document.getElementById('month-detail-body').innerHTML = '<div style="color:#ff8a8a;font-size:13px;padding:20px 0;text-align:center;">Failed to load: ' + (data.error || 'unknown error') + '</div>';
+      return;
+    }
+    renderMonthDetail(data);
+  } catch(e) {
+    document.getElementById('month-detail-body').innerHTML = '<div style="color:#ff8a8a;font-size:13px;padding:20px 0;text-align:center;">Connection error</div>';
+  }
+}
+
+function renderMonthDetail(data) {
+  var profitColor = data.profit >= 0 ? '#7dc87d' : '#ff8a8a';
+  var profitSign = data.profit >= 0 ? '+' : '−';
+  document.getElementById('month-detail-sub').innerHTML = '<span style="color:' + profitColor + ';font-weight:600;">' + profitSign + '£' + Math.abs(data.profit).toFixed(2) + '</span> profit';
+
+  var html = '';
+
+  html += '<div style="display:flex;align-items:center;gap:16px;padding:12px 0 18px;border-bottom:1px solid rgba(255,255,255,0.08);">';
+  html += '<div style="flex-shrink:0;">' + drawPie(data.income, data.expenses, 80) + '</div>';
+  html += '<div style="flex:1;font-size:13px;">';
+  html += '<div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:#7dc87d;">● Income</span><span style="color:#e0ecf8;font-weight:600;">£' + data.income.toFixed(2) + '</span></div>';
+  html += '<div style="display:flex;justify-content:space-between;padding:3px 0;"><span style="color:#ff8a8a;">● Expenses</span><span style="color:#e0ecf8;font-weight:600;">£' + data.expenses.toFixed(2) + '</span></div>';
+  html += '<div style="display:flex;justify-content:space-between;padding:5px 0 3px;border-top:1px solid rgba(255,255,255,0.08);margin-top:4px;"><span style="color:#D4AA28;font-weight:600;">Profit</span><span style="color:' + profitColor + ';font-weight:700;">' + profitSign + '£' + Math.abs(data.profit).toFixed(2) + '</span></div>';
+  html += '</div></div>';
+
+  if (data.byCategory && data.byCategory.length) {
+    html += '<div style="padding:16px 0 8px;">';
+    html += '<div class="modal-section-label">Expenses by category</div>';
+    html += data.byCategory.map(function(c) {
+      return '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;"><span style="color:#e0ecf8;">' + escapeHtml(c.category) + '</span><span style="color:#ff8a8a;font-weight:600;">£' + c.total.toFixed(2) + '</span></div>';
+    }).join('');
+    html += '</div>';
+  }
+
+  html += '<div style="padding:16px 0 8px;">';
+  html += '<div class="modal-section-label">Transactions (' + data.transactions.length + ')</div>';
+  if (!data.transactions.length) {
+    html += '<div style="color:#4a7aaa;font-size:13px;padding:12px 0;">No transactions</div>';
+  } else {
+    html += data.transactions.map(function(t) {
+      var isIncome = t.type === 'INCOME';
+      var amtColor = isIncome ? '#7dc87d' : '#ff8a8a';
+      var amtSign = isIncome ? '+' : '−';
+      var badgeBg = isIncome ? 'rgba(125,200,125,0.15)' : 'rgba(255,138,138,0.15)';
+      var badgeColor = isIncome ? '#7dc87d' : '#ff8a8a';
+      var binBtn = isIncome ? '' : '<button onclick="confirmDeleteTransaction(' + t.row_number + ', \'' + escapeJs(t.description) + '\', ' + t.amount + ')" style="background:none;border:none;color:#ff8a8a;cursor:pointer;font-size:16px;padding:4px 6px;margin-left:6px;" title="Delete">🗑</button>';
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
+        '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:13px;color:#e0ecf8;font-weight:600;">' + escapeHtml(t.description) + '</div>' +
+        '<div style="font-size:11px;color:#4a7aaa;margin-top:3px;">' + t.date + ' · ' + escapeHtml(t.category) + '</div>' +
+        '<div style="margin-top:5px;"><span style="font-size:10px;padding:2px 7px;border-radius:8px;background:' + badgeBg + ';color:' + badgeColor + ';font-weight:600;">' + t.type + '</span></div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;flex-shrink:0;">' +
+        '<span style="font-size:14px;font-weight:700;color:' + amtColor + ';">' + amtSign + '£' + t.amount.toFixed(2) + '</span>' +
+        binBtn +
+        '</div>' +
+        '</div>';
+    }).join('');
+  }
+  html += '</div>';
+
+  document.getElementById('month-detail-body').innerHTML = html;
+}
+
+async function confirmDeleteTransaction(rowNumber, description, amount) {
+  var ok = confirm('Delete this expense?\n\n' + description + '\n£' + amount.toFixed(2) + '\n\nThis cannot be undone.');
+  if (!ok) return;
+  try {
+    var result = await apiPost({ action: 'deleteTransaction', row_number: rowNumber });
+    if (!result.success) {
+      alert('Could not delete: ' + (result.error || 'unknown error'));
+      return;
+    }
+    await refreshMonthDetail();
+    await loadHmrc();
+  } catch(e) {
+    alert('Connection error — please try again.');
+  }
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeJs(s) {
+  return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+// --- end month detail ---
 
 function calculateTax() {
   if (!hmrcData) return;
