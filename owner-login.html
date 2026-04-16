@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rossington Window Cleaning — Owner Login</title>
+<link rel="manifest" href="manifest-owner.json">
+<meta name="theme-color" content="#D4AA28">
+<link rel="apple-touch-icon" href="icon-owner-192.png">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: Arial, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
@@ -41,7 +44,6 @@
   <hr class="divider">
   <span class="customer-link" onclick="window.location.href='index.html'">Customer login instead</span>
 </div>
-
 <script>
 function ownerLogin() {
   var username = document.getElementById('username').value;
@@ -53,6 +55,5 @@ function ownerLogin() {
   }
 }
 </script>
-
 </body>
 </html>
