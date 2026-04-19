@@ -3,56 +3,149 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rossington Window Cleaning — Owner Login</title>
+<title>RWC — Owner Login</title>
 <link rel="manifest" href="manifest-owner.json">
 <meta name="theme-color" content="#D4AA28">
-<link rel="apple-touch-icon" href="icon-owner-192.png">
+<link rel="apple-touch-icon" href="iconowner192.png">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: Arial, sans-serif; background: #f0f4f8; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-  .container { background: white; border-radius: 16px; padding: 32px 24px; width: 90%; max-width: 360px; text-align: center; }
-  .logo { background: #27500A; border-radius: 12px; padding: 16px; margin-bottom: 24px; }
-  .logo h1 { color: white; font-size: 18px; font-weight: 600; }
-  .logo p { color: #C0DD97; font-size: 12px; margin-top: 4px; }
-  .input-group { margin-bottom: 16px; text-align: left; }
-  .input-group label { font-size: 13px; color: #555; margin-bottom: 6px; display: block; }
-  .input-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
-  .input-group input:focus { border-color: #27500A; }
-  .btn { width: 100%; padding: 12px; background: #27500A; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
-  .btn:hover { background: #3B6D11; }
-  .divider { margin: 20px 0; border: none; border-top: 1px solid #eee; }
-  .customer-link { font-size: 13px; color: #0C447C; cursor: pointer; text-decoration: underline; }
-  .error { background: #FCEBEB; color: #A32D2D; font-size: 13px; padding: 10px; border-radius: 8px; margin-top: 12px; display: none; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: Arial, sans-serif;
+  background: #0a1628;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.container {
+  background: #0d1e35;
+  border-radius: 20px;
+  padding: 32px 24px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  border: 1px solid rgba(212,170,40,0.15);
+}
+
+.logo { margin-bottom: 28px; }
+.logo img { height: 60px; width: auto; display: block; margin: 0 auto 12px; }
+.logo-text { font-size: 11px; color: #D4AA28; text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600; }
+
+.gold-bar { width: 40px; height: 3px; background: #D4AA28; border-radius: 2px; margin: 0 auto 16px; }
+
+.screen-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; color: #e0ecf8; }
+.screen-sub { font-size: 13px; color: #4a7aaa; margin-bottom: 20px; line-height: 1.5; }
+
+.input-group { margin-bottom: 14px; text-align: left; }
+.input-group label { font-size: 13px; color: #7aabdc; margin-bottom: 6px; display: block; }
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  background: rgba(255,255,255,0.05);
+  color: #e0ecf8;
+}
+.input-group input::placeholder { color: #3a6a9a; }
+.input-group input:focus { border-color: #D4AA28; }
+
+.btn {
+  width: 100%;
+  padding: 13px;
+  background: #D4AA28;
+  color: #050d1a;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 4px;
+}
+.btn:disabled { background: rgba(212,170,40,0.3); cursor: not-allowed; }
+
+.error-msg {
+  background: rgba(220,80,80,0.1);
+  color: #e08080;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  display: none;
+  text-align: left;
+  border: 1px solid rgba(220,80,80,0.2);
+}
 </style>
 </head>
 <body>
+
 <div class="container">
   <div class="logo">
-    <h1>Rossington Window Cleaning</h1>
-    <p>Owner Access</p>
+    <img src="logoheader.png" alt="Rossington Window Cleaning">
+    <div class="gold-bar"></div>
+    <div class="logo-text">Owner Portal</div>
   </div>
+
+  <div class="screen-title">Owner login</div>
+  <div class="screen-sub">Sign in to access your dashboard</div>
+
   <div class="input-group">
-    <label>Owner username</label>
-    <input type="text" id="username" placeholder="Enter your username">
+    <label>Username</label>
+    <input type="text" id="input-username" placeholder="Enter username" autocomplete="username">
   </div>
   <div class="input-group">
     <label>Password</label>
-    <input type="password" id="password" placeholder="Enter your password">
+    <input type="password" id="input-password" placeholder="Enter password" autocomplete="current-password">
   </div>
-  <button class="btn" onclick="ownerLogin()">Sign in as owner</button>
-  <div class="error" id="error-msg">Incorrect username or password. Please try again.</div>
-  <hr class="divider">
-  <span class="customer-link" onclick="window.location.href='index.html'">Customer login instead</span>
+
+  <button class="btn" id="btn-login">Sign in</button>
+  <div class="error-msg" id="login-error">Incorrect username or password.</div>
 </div>
+
 <script>
-function ownerLogin() {
-  var username = document.getElementById('username').value;
-  var password = document.getElementById('password').value;
-  if (username === 'Rossingtonwindowcleaning' && password === 'Rossington') {
-    window.location.href = 'owner-dashboard.html';
-  } else {
-    document.getElementById('error-msg').style.display = 'block';
+var OWNER_USERNAME = 'Rossingtonwindowcleaning';
+var OWNER_PASSWORD = 'Rossington';
+
+document.getElementById('input-password').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { attemptLogin(); }
+});
+
+document.getElementById('btn-login').addEventListener('click', attemptLogin);
+
+function attemptLogin() {
+  var username = document.getElementById('input-username').value.trim();
+  var password = document.getElementById('input-password').value.trim();
+  var errorEl  = document.getElementById('login-error');
+  var btn      = document.getElementById('btn-login');
+
+  errorEl.style.display = 'none';
+
+  if (!username || !password) {
+    errorEl.textContent = 'Please enter your username and password.';
+    errorEl.style.display = 'block';
+    return;
   }
+
+  btn.textContent = 'Signing in...';
+  btn.disabled = true;
+
+  if (username === OWNER_USERNAME && password === OWNER_PASSWORD) {
+    localStorage.setItem('rwc_owner_auth', 'true');
+    window.location.href = 'owner-dashboard-v3.html';
+  } else {
+    errorEl.textContent = 'Incorrect username or password.';
+    errorEl.style.display = 'block';
+    btn.textContent = 'Sign in';
+    btn.disabled = false;
+  }
+}
+
+if (localStorage.getItem('rwc_owner_auth') === 'true') {
+  window.location.href = 'owner-dashboard-v3.html';
 }
 </script>
 </body>
