@@ -373,7 +373,10 @@ select.form-input option {
     <div class="header-title">Owner Dashboard</div>
     <div class="header-sub" id="header-date">Rossington Window Cleaning</div>
   </div>
-  <button class="logout-btn" onclick="logout()">Log out</button>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button class="logout-btn" onclick="openSettings()" style="font-size:16px;padding:6px 10px;" title="Settings">⚙️</button>
+    <button class="logout-btn" onclick="logout()">Log out</button>
+  </div>
 </div>
 
 <!-- ==================== DASHBOARD TAB ==================== -->
@@ -381,18 +384,19 @@ select.form-input option {
   <div id="dashboard-loader" class="loader"><div class="spinner"></div>Loading...</div>
   <div id="dashboard-content" style="display:none;">
 
+    <div style="font-size:11px;color:#4a7aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;" id="week-range-label">This week</div>
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-value" id="stat-invoiced">£0</div>
-        <div class="stat-label">Invoiced today</div>
+        <div class="stat-value" id="stat-cleans-done">0</div>
+        <div class="stat-label">Cleans done</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-cleans-outstanding">0</div>
+        <div class="stat-label">Still to do</div>
       </div>
       <div class="stat-card">
         <div class="stat-value" id="stat-paid">£0</div>
         <div class="stat-label">Paid so far</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value" id="stat-cleans">0</div>
-        <div class="stat-label">Cleans done</div>
       </div>
       <div class="stat-card" onclick="openOutstandingPanel()" style="cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(212,170,40,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
         <div class="stat-value" id="stat-outstanding">£0</div>
@@ -660,6 +664,42 @@ select.form-input option {
       <p style="font-size:11px;color:#4a7aaa;font-style:italic;margin-top:16px;">This guide is general information only, not personal tax advice. For complex situations consult HMRC or a qualified accountant.</p>
     </div>
     <button class="btn btn-outline btn-full" style="margin-top:16px;" onclick="closeModal('filing-guide-modal')">Close</button>
+  </div>
+</div>
+
+<!-- ==================== SETTINGS MODAL ==================== -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div class="modal-title">Settings</div>
+      <button class="btn btn-outline" onclick="closeModal('settings-modal')" style="font-size:18px;padding:4px 10px;">✕</button>
+    </div>
+
+    <div class="modal-section-label">Change owner password</div>
+    <div class="form-group">
+      <label class="form-label">Current password</label>
+      <input class="form-input" type="password" id="set-current-pw" placeholder="Your current password">
+    </div>
+    <div class="form-group">
+      <label class="form-label">New password</label>
+      <input class="form-input" type="password" id="set-new-pw" placeholder="At least 6 characters">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm new password</label>
+      <input class="form-input" type="password" id="set-confirm-pw" placeholder="Type it again">
+    </div>
+    <div id="settings-pw-error" class="error-msg"></div>
+    <div id="settings-pw-success" class="success-msg"></div>
+    <button class="btn btn-gold btn-full" id="settings-pw-btn" onclick="changeOwnerPassword()">Save new password</button>
+
+    <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.07);">
+      <div class="modal-section-label">Forgot password?</div>
+      <p style="font-size:13px;color:#4a7aaa;margin-bottom:12px;line-height:1.5;">Send a password reset link to <span style="color:#D4AA28;">rossingtonwindowcleaning@gmail.com</span></p>
+      <div id="settings-recovery-error" class="error-msg"></div>
+      <div id="settings-recovery-success" class="success-msg"></div>
+      <button class="btn btn-outline btn-full" id="settings-recovery-btn" onclick="sendPasswordReset()">Send reset email</button>
+    </div>
   </div>
 </div>
 
@@ -981,6 +1021,7 @@ window.addEventListener('load', function() {
 });
 
 function logout() {
+  localStorage.removeItem('rwc_owner_auth');
   window.location.href = 'owner-login.html';
 }
 
@@ -1029,6 +1070,26 @@ async function apiPost(body) {
 // ============================================================
 // DASHBOARD
 // ============================================================
+
+function getWeekBounds() {
+  var now = new Date();
+  var day = now.getDay();
+  var diffToMon = (day === 0) ? -6 : 1 - day;
+  var mon = new Date(now);
+  mon.setDate(now.getDate() + diffToMon);
+  mon.setHours(0,0,0,0);
+  var sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  sun.setHours(23,59,59,999);
+  return { start: mon, end: sun };
+}
+
+function formatShortDate(d) {
+  var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
+}
+
 async function loadDashboard() {
   try {
     var data = await apiGet({ action: 'getOwnerSummary' });
@@ -1036,13 +1097,23 @@ async function loadDashboard() {
     document.getElementById('dashboard-content').style.display = 'block';
 
     if (data.success) {
-      document.getElementById('stat-invoiced').textContent = '£' + (data.invoiced_today || 0).toFixed(2);
-      document.getElementById('stat-paid').textContent = '£' + (data.paid_today || 0).toFixed(2);
-      document.getElementById('stat-cleans').textContent = data.cleans_done || 0;
+      var week = getWeekBounds();
+      document.getElementById('week-range-label').textContent =
+        formatShortDate(week.start) + ' – ' + formatShortDate(week.end);
+
+      var weeklyJobs = data.weekly_jobs || [];
+      var todaysJobs = data.todays_jobs || [];
+
+      var cleansDone = weeklyJobs.filter(function(j) { return j.job_status === 'complete'; }).length;
+      var cleansOutstanding = weeklyJobs.filter(function(j) { return j.job_status !== 'complete'; }).length;
+
+      document.getElementById('stat-cleans-done').textContent = cleansDone;
+      document.getElementById('stat-cleans-outstanding').textContent = cleansOutstanding;
+      document.getElementById('stat-paid').textContent = '£' + (data.paid_this_week || 0).toFixed(2);
       document.getElementById('stat-outstanding').textContent = '£' + (data.total_outstanding || 0).toFixed(2);
 
-      renderTodaysJobs(data.todays_jobs || []);
-      renderWeeklyJobs(data.weekly_jobs || []);
+      renderTodaysJobs(todaysJobs);
+      renderWeeklyJobs(weeklyJobs);
       renderPaymentNotifications(data.payment_notifications || []);
       loadReferralAlertCount();
     }
@@ -2232,6 +2303,91 @@ async function submitExpense() {
     btn.disabled = false;
     btn.textContent = 'Save expense';
   }
+}
+
+// ============================================================
+// SETTINGS — OWNER PASSWORD + RECOVERY
+// ============================================================
+
+var OWNER_PASSWORD_KEY = 'rwc_owner_password';
+
+function getOwnerPassword() {
+  return localStorage.getItem(OWNER_PASSWORD_KEY) || 'Rossington';
+}
+
+function openSettings() {
+  document.getElementById('set-current-pw').value = '';
+  document.getElementById('set-new-pw').value = '';
+  document.getElementById('set-confirm-pw').value = '';
+  document.getElementById('settings-pw-error').style.display = 'none';
+  document.getElementById('settings-pw-success').style.display = 'none';
+  document.getElementById('settings-recovery-error').style.display = 'none';
+  document.getElementById('settings-recovery-success').style.display = 'none';
+  document.getElementById('settings-modal').classList.add('open');
+}
+
+function changeOwnerPassword() {
+  var current = document.getElementById('set-current-pw').value.trim();
+  var newPw = document.getElementById('set-new-pw').value.trim();
+  var confirm = document.getElementById('set-confirm-pw').value.trim();
+  var errEl = document.getElementById('settings-pw-error');
+  var okEl = document.getElementById('settings-pw-success');
+  var btn = document.getElementById('settings-pw-btn');
+  errEl.style.display = 'none';
+  okEl.style.display = 'none';
+
+  if (!current || !newPw || !confirm) {
+    errEl.textContent = 'Please fill in all three fields.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (current !== getOwnerPassword()) {
+    errEl.textContent = 'Current password is incorrect.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (newPw.length < 6) {
+    errEl.textContent = 'New password must be at least 6 characters.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (newPw !== confirm) {
+    errEl.textContent = 'New passwords do not match.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  localStorage.setItem(OWNER_PASSWORD_KEY, newPw);
+  document.getElementById('set-current-pw').value = '';
+  document.getElementById('set-new-pw').value = '';
+  document.getElementById('set-confirm-pw').value = '';
+  okEl.textContent = '✅ Password updated. Use your new password next time you log in.';
+  okEl.style.display = 'block';
+}
+
+async function sendPasswordReset() {
+  var btn = document.getElementById('settings-recovery-btn');
+  var errEl = document.getElementById('settings-recovery-error');
+  var okEl = document.getElementById('settings-recovery-success');
+  errEl.style.display = 'none';
+  okEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  try {
+    var result = await apiPost({ action: 'sendOwnerPasswordReset' });
+    if (result.success) {
+      okEl.textContent = '✅ Reset email sent to rossingtonwindowcleaning@gmail.com. Check your inbox.';
+      okEl.style.display = 'block';
+    } else {
+      errEl.textContent = 'Failed to send email. Please try again.';
+      errEl.style.display = 'block';
+    }
+  } catch(e) {
+    errEl.textContent = 'Connection error. Please try again.';
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Send reset email';
 }
 
 function openFilingGuide() {

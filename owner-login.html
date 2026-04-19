@@ -108,7 +108,12 @@ body {
 
 <script>
 var OWNER_USERNAME = 'Rossingtonwindowcleaning';
-var OWNER_PASSWORD = 'Rossington';
+var OWNER_DEFAULT_PASSWORD = 'Rossington';
+var OWNER_PASSWORD_KEY = 'rwc_owner_password';
+
+function getOwnerPassword() {
+  return localStorage.getItem(OWNER_PASSWORD_KEY) || OWNER_DEFAULT_PASSWORD;
+}
 
 document.getElementById('input-password').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { attemptLogin(); }
@@ -133,7 +138,7 @@ function attemptLogin() {
   btn.textContent = 'Signing in...';
   btn.disabled = true;
 
-  if (username === OWNER_USERNAME && password === OWNER_PASSWORD) {
+  if (username === OWNER_USERNAME && password === getOwnerPassword()) {
     localStorage.setItem('rwc_owner_auth', 'true');
     window.location.href = 'owner-dashboard-v3.html';
   } else {
