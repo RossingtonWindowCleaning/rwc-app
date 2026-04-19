@@ -1104,6 +1104,50 @@ async function loadDashboard() {
       var weeklyJobs = data.weekly_jobs || [];
       var todaysJobs = data.todays_jobs || [];
 
+      try {
+        var custData = await apiGet({ action: 'getAllCustomers' });
+        if (custData.success && custData.customers) {
+          var existingWeekIds = {};
+          weeklyJobs.forEach(function(j) { existingWeekIds[j.customer_id] = true; });
+          var existingTodayIds = {};
+          todaysJobs.forEach(function(j) { existingTodayIds[j.customer_id] = true; });
+
+          var todayStart = new Date(); todayStart.setHours(0,0,0,0);
+          var todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+
+          custData.customers.forEach(function(c) {
+            if (c.job_status !== 'complete') return;
+            if (!c.last_clean_date) return;
+            var lc = new Date(c.last_clean_date);
+            if (isNaN(lc.getTime())) return;
+            if (lc >= week.start && lc <= week.end && !existingWeekIds[c.customer_id]) {
+              weeklyJobs.push({
+                customer_id: c.customer_id,
+                first_name: c.first_name,
+                last_name: c.last_name,
+                address_line_1: c.address_line_1,
+                next_clean_confirmed: c.last_clean_date,
+                job_status: 'complete',
+                job_type: c.job_type
+              });
+              existingWeekIds[c.customer_id] = true;
+            }
+            if (lc >= todayStart && lc <= todayEnd && !existingTodayIds[c.customer_id]) {
+              todaysJobs.push({
+                customer_id: c.customer_id,
+                first_name: c.first_name,
+                last_name: c.last_name,
+                address_line_1: c.address_line_1,
+                next_clean_confirmed: c.last_clean_date,
+                job_status: 'complete',
+                job_type: c.job_type
+              });
+              existingTodayIds[c.customer_id] = true;
+            }
+          });
+        }
+      } catch(e) {}
+
       var cleansDone = weeklyJobs.filter(function(j) { return j.job_status === 'complete'; }).length;
       var cleansOutstanding = weeklyJobs.filter(function(j) { return j.job_status !== 'complete'; }).length;
 
@@ -1222,25 +1266,54 @@ async function refreshOutstandingPanel() {
   var totalEl = document.getElementById('outstanding-total');
   listEl.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">Loading...</div>';
   try {
-    var data = await apiGet({ action: 'getOwnerSummary' });
-    if (!data.success) {
+    var data = await apiGet({ action: 'getAllCustomers' });
+    if (!data.success || !data.customers) {
       listEl.innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Failed to load</div>';
       return;
     }
-    var owed = data.payment_notifications || [];
-    totalEl.textContent = '£' + (data.total_outstanding || 0).toFixed(2) + ' owed';
+
+    var notifiedIds = {};
+    try {
+      var summary = await apiGet({ action: 'getOwnerSummary' });
+      if (summary.success) {
+        (summary.payment_notifications || []).forEach(function(n) { notifiedIds[n.customer_id] = true; });
+      }
+    } catch(e) {}
+
+    var owed = data.customers.filter(function(c) {
+      return (parseFloat(c.outstanding_balance) || 0) > 0;
+    });
+
+    owed.sort(function(a, b) {
+      var aN = notifiedIds[a.customer_id] ? 1 : 0;
+      var bN = notifiedIds[b.customer_id] ? 1 : 0;
+      if (aN !== bN) return bN - aN;
+      return (parseFloat(b.outstanding_balance) || 0) - (parseFloat(a.outstanding_balance) || 0);
+    });
+
+    var total = owed.reduce(function(s, c) { return s + (parseFloat(c.outstanding_balance) || 0); }, 0);
+    totalEl.textContent = '£' + total.toFixed(2) + ' owed';
+
     if (!owed.length) {
       listEl.innerHTML = '<div style="color:#7dc87d;font-size:13px;padding:20px 0;text-align:center;">✓ All paid up — nothing outstanding</div>';
       return;
     }
+
     listEl.innerHTML = owed.map(function(c) {
       var bal = parseFloat(c.outstanding_balance) || 0;
       var method = c.payment_method || 'Bank Transfer';
+      var notifiedDot = notifiedIds[c.customer_id]
+        ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#D4AA28;margin-right:6px;vertical-align:middle;"></span>'
+        : '';
+      var notifiedNote = notifiedIds[c.customer_id]
+        ? '<div style="font-size:11px;color:#D4AA28;margin-top:3px;">⚠ Says they\'ve paid — confirm</div>'
+        : '';
       return '<div class="job-row" id="owed-' + c.customer_id + '" style="flex-wrap:wrap;align-items:flex-start;gap:10px;padding:14px 0;">' +
         '<div style="flex:1;min-width:0;cursor:pointer;" onclick="closeModal(\'outstanding-modal\');openCustomerById(\'' + c.customer_id + '\')">' +
-        '<div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
-        '<div style="font-size:12px;color:#4a7aaa;margin-top:3px;">' + c.address_line_1 + '</div>' +
+        '<div style="font-size:14px;font-weight:600;">' + notifiedDot + c.first_name + ' ' + c.last_name + '</div>' +
+        '<div style="font-size:12px;color:#4a7aaa;margin-top:3px;">' + (c.address_line_1 || '') + '</div>' +
         '<div style="font-size:11px;color:#4a7aaa;margin-top:5px;">Will log as: <span style="color:#D4AA28;">' + method + '</span></div>' +
+        notifiedNote +
         '</div>' +
         '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;">' +
         '<span style="font-size:15px;font-weight:700;color:#ff8a8a;">£' + bal.toFixed(2) + '</span>' +
