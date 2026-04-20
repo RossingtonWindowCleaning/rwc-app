@@ -692,14 +692,6 @@ select.form-input option {
     <div id="settings-pw-error" class="error-msg"></div>
     <div id="settings-pw-success" class="success-msg"></div>
     <button class="btn btn-gold btn-full" id="settings-pw-btn" onclick="changeOwnerPassword()">Save new password</button>
-
-    <div style="margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.07);">
-      <div class="modal-section-label">Forgot password?</div>
-      <p style="font-size:13px;color:#4a7aaa;margin-bottom:12px;line-height:1.5;">Send a password reset link to <span style="color:#D4AA28;">rossingtonwindowcleaning@gmail.com</span></p>
-      <div id="settings-recovery-error" class="error-msg"></div>
-      <div id="settings-recovery-success" class="success-msg"></div>
-      <button class="btn btn-outline btn-full" id="settings-recovery-btn" onclick="sendPasswordReset()">Send reset email</button>
-    </div>
   </div>
 </div>
 
@@ -2379,14 +2371,8 @@ async function submitExpense() {
 }
 
 // ============================================================
-// SETTINGS — OWNER PASSWORD + RECOVERY
+// SETTINGS — OWNER PASSWORD
 // ============================================================
-
-var OWNER_PASSWORD_KEY = 'rwc_owner_password';
-
-function getOwnerPassword() {
-  return localStorage.getItem(OWNER_PASSWORD_KEY) || 'Rossington';
-}
 
 function openSettings() {
   document.getElementById('set-current-pw').value = '';
@@ -2394,12 +2380,10 @@ function openSettings() {
   document.getElementById('set-confirm-pw').value = '';
   document.getElementById('settings-pw-error').style.display = 'none';
   document.getElementById('settings-pw-success').style.display = 'none';
-  document.getElementById('settings-recovery-error').style.display = 'none';
-  document.getElementById('settings-recovery-success').style.display = 'none';
   document.getElementById('settings-modal').classList.add('open');
 }
 
-function changeOwnerPassword() {
+async function changeOwnerPassword() {
   var current = document.getElementById('set-current-pw').value.trim();
   var newPw = document.getElementById('set-new-pw').value.trim();
   var confirm = document.getElementById('set-confirm-pw').value.trim();
@@ -2414,11 +2398,6 @@ function changeOwnerPassword() {
     errEl.style.display = 'block';
     return;
   }
-  if (current !== getOwnerPassword()) {
-    errEl.textContent = 'Current password is incorrect.';
-    errEl.style.display = 'block';
-    return;
-  }
   if (newPw.length < 6) {
     errEl.textContent = 'New password must be at least 6 characters.';
     errEl.style.display = 'block';
@@ -2430,37 +2409,32 @@ function changeOwnerPassword() {
     return;
   }
 
-  localStorage.setItem(OWNER_PASSWORD_KEY, newPw);
-  document.getElementById('set-current-pw').value = '';
-  document.getElementById('set-new-pw').value = '';
-  document.getElementById('set-confirm-pw').value = '';
-  okEl.textContent = '✅ Password updated. Use your new password next time you log in.';
-  okEl.style.display = 'block';
-}
-
-async function sendPasswordReset() {
-  var btn = document.getElementById('settings-recovery-btn');
-  var errEl = document.getElementById('settings-recovery-error');
-  var okEl = document.getElementById('settings-recovery-success');
-  errEl.style.display = 'none';
-  okEl.style.display = 'none';
+  btn.textContent = 'Saving...';
   btn.disabled = true;
-  btn.textContent = 'Sending...';
+
   try {
-    var result = await apiPost({ action: 'sendOwnerPasswordReset' });
-    if (result.success) {
-      okEl.textContent = '✅ Reset email sent to rossingtonwindowcleaning@gmail.com. Check your inbox.';
+    var result = await apiPost({
+      action: 'setOwnerPassword',
+      current_password: current,
+      new_password: newPw
+    });
+    if (result && result.success) {
+      document.getElementById('set-current-pw').value = '';
+      document.getElementById('set-new-pw').value = '';
+      document.getElementById('set-confirm-pw').value = '';
+      okEl.textContent = '✅ Password updated. Use your new password next time you log in.';
       okEl.style.display = 'block';
     } else {
-      errEl.textContent = 'Failed to send email. Please try again.';
+      errEl.textContent = (result && result.error) || 'Failed to update password.';
       errEl.style.display = 'block';
     }
-  } catch(e) {
+  } catch (e) {
     errEl.textContent = 'Connection error. Please try again.';
     errEl.style.display = 'block';
   }
+
+  btn.textContent = 'Save new password';
   btn.disabled = false;
-  btn.textContent = 'Send reset email';
 }
 
 function openFilingGuide() {
