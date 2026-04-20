@@ -68,6 +68,17 @@ body {
 }
 .btn:disabled { background: rgba(212,170,40,0.3); cursor: not-allowed; }
 
+.link-btn {
+  background: none;
+  border: none;
+  color: #7aabdc;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 16px;
+  padding: 6px 0;
+  text-decoration: underline;
+}
+
 .error-msg {
   background: rgba(220,80,80,0.1);
   color: #e08080;
@@ -78,6 +89,32 @@ body {
   display: none;
   text-align: left;
   border: 1px solid rgba(220,80,80,0.2);
+}
+
+.success-msg {
+  background: rgba(80,200,120,0.08);
+  color: #7ddba2;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  display: none;
+  text-align: left;
+  border: 1px solid rgba(80,200,120,0.2);
+}
+
+.hidden { display: none; }
+
+.back-link {
+  background: none;
+  border: none;
+  color: #7aabdc;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 16px;
+  padding: 0;
+  text-align: left;
+  display: block;
 }
 </style>
 </head>
@@ -90,20 +127,60 @@ body {
     <div class="logo-text">Owner Portal</div>
   </div>
 
-  <div class="screen-title">Owner login</div>
-  <div class="screen-sub">Sign in to access your dashboard</div>
+  <!-- LOGIN PANEL -->
+  <div id="panel-login">
+    <div class="screen-title">Owner login</div>
+    <div class="screen-sub">Sign in to access your dashboard</div>
 
-  <div class="input-group">
-    <label>Username</label>
-    <input type="text" id="input-username" placeholder="Enter username" autocomplete="username">
-  </div>
-  <div class="input-group">
-    <label>Password</label>
-    <input type="password" id="input-password" placeholder="Enter password" autocomplete="current-password">
+    <div class="input-group">
+      <label>Username</label>
+      <input type="text" id="input-username" placeholder="Enter username" autocomplete="username">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" id="input-password" placeholder="Enter password" autocomplete="current-password">
+    </div>
+
+    <button class="btn" id="btn-login">Sign in</button>
+    <div class="error-msg" id="login-error"></div>
+
+    <button class="link-btn" id="btn-forgot">Forgot password?</button>
   </div>
 
-  <button class="btn" id="btn-login">Sign in</button>
-  <div class="error-msg" id="login-error">Incorrect username or password.</div>
+  <!-- FORGOT PASSWORD — STEP 1 (REQUEST CODE) -->
+  <div id="panel-forgot-request" class="hidden">
+    <button class="back-link" onclick="showPanel('login')">← Back to sign in</button>
+    <div class="screen-title">Forgot password</div>
+    <div class="screen-sub">We'll email a reset code to your business email address.</div>
+
+    <button class="btn" id="btn-send-code">Send reset code</button>
+    <div class="error-msg" id="request-error"></div>
+    <div class="success-msg" id="request-success"></div>
+  </div>
+
+  <!-- FORGOT PASSWORD — STEP 2 (ENTER CODE + NEW PW) -->
+  <div id="panel-forgot-reset" class="hidden">
+    <button class="back-link" onclick="showPanel('login')">← Back to sign in</button>
+    <div class="screen-title">Enter reset code</div>
+    <div class="screen-sub">Check your email for the code and set a new password below.</div>
+
+    <div class="input-group">
+      <label>Reset code</label>
+      <input type="text" id="input-code" placeholder="Code from email" autocomplete="one-time-code">
+    </div>
+    <div class="input-group">
+      <label>New password</label>
+      <input type="password" id="input-new-pw" placeholder="At least 6 characters">
+    </div>
+    <div class="input-group">
+      <label>Confirm new password</label>
+      <input type="password" id="input-confirm-pw" placeholder="Type it again">
+    </div>
+
+    <button class="btn" id="btn-reset">Set new password & sign in</button>
+    <div class="error-msg" id="reset-error"></div>
+  </div>
+
 </div>
 
 <script>
@@ -120,11 +197,25 @@ async function apiPost(body) {
   return res.json();
 }
 
+function showPanel(name) {
+  document.getElementById('panel-login').classList.add('hidden');
+  document.getElementById('panel-forgot-request').classList.add('hidden');
+  document.getElementById('panel-forgot-reset').classList.add('hidden');
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('request-error').style.display = 'none';
+  document.getElementById('request-success').style.display = 'none';
+  document.getElementById('reset-error').style.display = 'none';
+  if (name === 'login') document.getElementById('panel-login').classList.remove('hidden');
+  if (name === 'forgot-request') document.getElementById('panel-forgot-request').classList.remove('hidden');
+  if (name === 'forgot-reset') document.getElementById('panel-forgot-reset').classList.remove('hidden');
+}
+
+// ========== LOGIN ==========
 document.getElementById('input-password').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') { attemptLogin(); }
 });
-
 document.getElementById('btn-login').addEventListener('click', attemptLogin);
+document.getElementById('btn-forgot').addEventListener('click', function() { showPanel('forgot-request'); });
 
 async function attemptLogin() {
   var username = document.getElementById('input-username').value.trim();
@@ -168,6 +259,92 @@ async function attemptLogin() {
   }
 }
 
+// ========== FORGOT PASSWORD — REQUEST CODE ==========
+document.getElementById('btn-send-code').addEventListener('click', requestResetCode);
+
+async function requestResetCode() {
+  var btn = document.getElementById('btn-send-code');
+  var errEl = document.getElementById('request-error');
+  var okEl = document.getElementById('request-success');
+  errEl.style.display = 'none';
+  okEl.style.display = 'none';
+  btn.textContent = 'Sending...';
+  btn.disabled = true;
+
+  try {
+    var result = await apiPost({ action: 'sendOwnerPasswordReset' });
+    if (result && result.success) {
+      okEl.textContent = '✅ Code sent. Check your email.';
+      okEl.style.display = 'block';
+      setTimeout(function() { showPanel('forgot-reset'); }, 1500);
+    } else {
+      errEl.textContent = 'Failed to send email. Please try again.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Send reset code';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    errEl.textContent = 'Connection error. Please try again.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Send reset code';
+    btn.disabled = false;
+  }
+}
+
+// ========== FORGOT PASSWORD — RESET WITH CODE ==========
+document.getElementById('btn-reset').addEventListener('click', submitReset);
+
+async function submitReset() {
+  var code    = document.getElementById('input-code').value.trim();
+  var newPw   = document.getElementById('input-new-pw').value.trim();
+  var confirm = document.getElementById('input-confirm-pw').value.trim();
+  var errEl   = document.getElementById('reset-error');
+  var btn     = document.getElementById('btn-reset');
+  errEl.style.display = 'none';
+
+  if (!code || !newPw || !confirm) {
+    errEl.textContent = 'Please fill in all three fields.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (newPw.length < 6) {
+    errEl.textContent = 'New password must be at least 6 characters.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (newPw !== confirm) {
+    errEl.textContent = 'New passwords do not match.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Setting password...';
+  btn.disabled = true;
+
+  try {
+    var result = await apiPost({
+      action: 'setOwnerPassword',
+      current_password: code,
+      new_password: newPw
+    });
+    if (result && result.success) {
+      localStorage.setItem('rwc_owner_auth', 'true');
+      window.location.href = 'owner-dashboard-v3.html';
+    } else {
+      errEl.textContent = (result && result.error) || 'Invalid or expired code.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Set new password & sign in';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    errEl.textContent = 'Connection error. Please try again.';
+    errEl.style.display = 'block';
+    btn.textContent = 'Set new password & sign in';
+    btn.disabled = false;
+  }
+}
+
+// Auto-redirect if already logged in
 if (localStorage.getItem('rwc_owner_auth') === 'true') {
   window.location.href = 'owner-dashboard-v3.html';
 }
