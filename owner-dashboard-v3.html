@@ -415,6 +415,17 @@ select.form-input option {
       </div>
     </div>
 
+    <div class="card" id="route-card" style="display:none;background:rgba(212,170,40,0.08);border:1px solid rgba(212,170,40,0.3);cursor:pointer;" onclick="navigateTodaysRoute()">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="card-label" style="margin-bottom:6px;color:#D4AA28;">Route</div>
+          <div id="route-card-text" style="font-size:15px;font-weight:700;color:#e0ecf8;">Navigate today's jobs</div>
+          <div style="font-size:12px;color:#4a7aaa;margin-top:3px;">Opens in Google Maps · best order from where you are</div>
+        </div>
+        <button class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;" onclick="event.stopPropagation();navigateTodaysRoute()">Go →</button>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-label" id="todays-jobs-label">Today's jobs</div>
       <div id="todays-jobs"><div style="color:#4a7aaa;font-size:13px;">No jobs scheduled for today</div></div>
@@ -1095,10 +1106,14 @@ async function loadDashboard() {
 
       var weeklyJobs = data.weekly_jobs || [];
       var todaysJobs = data.todays_jobs || [];
+      var todaysFullAddresses = {};
 
       try {
         var custData = await apiGet({ action: 'getAllCustomers' });
         if (custData.success && custData.customers) {
+          custData.customers.forEach(function(c) {
+            todaysFullAddresses[c.customer_id] = [c.address_line_1, c.address_line_2, c.town, c.postcode].filter(Boolean).join(', ');
+          });
           var existingWeekIds = {};
           weeklyJobs.forEach(function(j) { existingWeekIds[j.customer_id] = true; });
           var existingTodayIds = {};
@@ -1149,6 +1164,9 @@ async function loadDashboard() {
       document.getElementById('stat-outstanding').textContent = '£' + (data.total_outstanding || 0).toFixed(2);
 
       renderTodaysJobs(todaysJobs);
+      window.rwcTodaysJobs = todaysJobs;
+      window.rwcTodaysAddresses = todaysFullAddresses;
+      updateRouteButton(todaysJobs);
       renderWeeklyJobs(weeklyJobs);
       renderPaymentNotifications(data.payment_notifications || []);
       loadReferralAlertCount();
@@ -1156,6 +1174,43 @@ async function loadDashboard() {
   } catch(e) {
     document.getElementById('dashboard-loader').innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Failed to load. Check your connection.</div>';
   }
+}
+
+function updateRouteButton(jobs) {
+  var card = document.getElementById('route-card');
+  if (!card) return;
+  var pending = jobs.filter(function(j) { return j.job_status !== 'complete'; });
+  if (pending.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+  document.getElementById('route-card-text').textContent = 'Navigate ' + pending.length + ' ' + (pending.length === 1 ? 'job' : 'jobs');
+}
+
+function navigateTodaysRoute() {
+  var jobs = window.rwcTodaysJobs || [];
+  var addresses = window.rwcTodaysAddresses || {};
+  var pending = jobs.filter(function(j) { return j.job_status !== 'complete'; });
+  if (pending.length === 0) { alert('No pending jobs today.'); return; }
+
+  var waypoints = [];
+  for (var i = 0; i < pending.length; i++) {
+    var addr = addresses[pending[i].customer_id];
+    if (!addr) continue;
+    waypoints.push(addr);
+  }
+
+  if (waypoints.length === 0) { alert('No addresses available for today\'s jobs.'); return; }
+
+  var destination = waypoints.pop();
+  var url = 'https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=' + encodeURIComponent(destination);
+  if (waypoints.length > 0) {
+    url += '&waypoints=' + waypoints.map(encodeURIComponent).join('|');
+  }
+  url += '&travelmode=driving';
+
+  window.open(url, '_blank');
 }
 
 function renderTodaysJobs(jobs) {
