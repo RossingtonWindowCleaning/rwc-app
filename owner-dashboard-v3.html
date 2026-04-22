@@ -1847,6 +1847,8 @@ function changeMonth(dir) {
 function getJobsForDate(dateStr) {
   return scheduleCustomers.filter(function(c) {
     return c.next_clean_confirmed && c.next_clean_confirmed.substring(0, 10) === dateStr;
+  }).sort(function(a, b) {
+    return (parseInt(a.job_order) || 999) - (parseInt(b.job_order) || 999);
   });
 }
 
