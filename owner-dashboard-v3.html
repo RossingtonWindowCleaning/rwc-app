@@ -1887,9 +1887,9 @@ function renderCalendar() {
       cell.style.color = '#D4AA28';
       cell.style.fontWeight = '600';
     }
-    cell.onclick = (function(ds, js) {
-      return function() { showDayJobs(ds, js); };
-    })(dateStr, jobs);
+    cell.onclick = (function(ds) {
+      return function() { showDayJobs(ds, getJobsForDate(ds)); };
+    })(dateStr);
     grid.appendChild(cell);
   }
 }
@@ -1927,6 +1927,14 @@ function showDayJobs(dateStr, jobs) {
 function saveDayOrder() {
   var items = document.querySelectorAll('#day-jobs-sortable .job-row');
   var order = Array.from(items).map(function(el) { return el.getAttribute('data-id'); });
+  order.forEach(function(cid, index) {
+    var c = scheduleCustomers.find(function(x) { return String(x.customer_id) === String(cid); });
+    if (c) c.job_order = index + 1;
+    if (window.allCustomers) {
+      var ac = allCustomers.find(function(x) { return String(x.customer_id) === String(cid); });
+      if (ac) ac.job_order = index + 1;
+    }
+  });
   apiPost({ action: 'saveJobOrder', order: order });
 }
 
