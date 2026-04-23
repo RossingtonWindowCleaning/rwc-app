@@ -1071,6 +1071,53 @@ async function apiPost(body) {
 }
 
 // ============================================================
+// CACHED GET — instant from cache, refreshes in background
+// ============================================================
+var CACHE_TTL_MS = 60 * 1000; // 60 seconds
+
+function getCachedData(key) {
+  try {
+    var raw = sessionStorage.getItem('rwc_owner_' + key);
+    if (!raw) return null;
+    var entry = JSON.parse(raw);
+    if (Date.now() - entry.timestamp > CACHE_TTL_MS) return null;
+    return entry.data;
+  } catch(e) { return null; }
+}
+
+function setCachedData(key, data) {
+  try {
+    sessionStorage.setItem('rwc_owner_' + key, JSON.stringify({ timestamp: Date.now(), data: data }));
+  } catch(e) {}
+}
+
+function apiGetCached(params, cacheKey, onData) {
+  var cached = getCachedData(cacheKey);
+  if (cached) {
+    onData(cached, true);
+    // Refresh in background, silently
+    apiGet(params).then(function(fresh) {
+      if (fresh && fresh.success) {
+        setCachedData(cacheKey, fresh);
+        onData(fresh, false);
+      }
+    }).catch(function(){});
+    return;
+  }
+  apiGet(params).then(function(fresh) {
+    if (fresh && fresh.success) setCachedData(cacheKey, fresh);
+    onData(fresh, false);
+  }).catch(function(){ onData(null, false); });
+}
+
+function invalidateCache() {
+  try {
+    sessionStorage.removeItem('rwc_owner_ownerSummary');
+    sessionStorage.removeItem('rwc_owner_allCustomers');
+  } catch(e) {}
+}
+
+// ============================================================
 // DASHBOARD
 // ============================================================
 
@@ -1094,86 +1141,93 @@ function formatShortDate(d) {
 }
 
 async function loadDashboard() {
-  try {
-    var data = await apiGet({ action: 'getOwnerSummary' });
+  apiGetCached({ action: 'getOwnerSummary' }, 'ownerSummary', function(data, fromCache) {
     document.getElementById('dashboard-loader').style.display = 'none';
     document.getElementById('dashboard-content').style.display = 'block';
+    if (!data || !data.success) {
+      if (!fromCache) {
+        document.getElementById('dashboard-loader').innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Failed to load. Check your connection.</div>';
+      }
+      return;
+    }
+    renderDashboard(data);
+  });
+}
 
-    if (data.success) {
-      var week = getWeekBounds();
-      document.getElementById('week-range-label').textContent =
-        formatShortDate(week.start) + ' – ' + formatShortDate(week.end);
+function renderDashboard(data) {
+  var week = getWeekBounds();
+  document.getElementById('week-range-label').textContent =
+    formatShortDate(week.start) + ' – ' + formatShortDate(week.end);
 
-      var weeklyJobs = data.weekly_jobs || [];
-      var todaysJobs = data.todays_jobs || [];
-      var todaysFullAddresses = {};
+  var weeklyJobs = (data.weekly_jobs || []).slice();
+  var todaysJobs = (data.todays_jobs || []).slice();
+  var todaysFullAddresses = {};
+  var notesMap = {};
 
-      try {
-        var custData = await apiGet({ action: 'getAllCustomers' });
-        if (custData.success && custData.customers) {
-          custData.customers.forEach(function(c) {
-            todaysFullAddresses[c.customer_id] = [c.address_line_1, c.address_line_2, c.town, c.postcode].filter(Boolean).join(', ');
+  apiGetCached({ action: 'getAllCustomers' }, 'allCustomers', function(custData) {
+    if (custData && custData.success && custData.customers) {
+      custData.customers.forEach(function(c) {
+        todaysFullAddresses[c.customer_id] = [c.address_line_1, c.address_line_2, c.town, c.postcode].filter(Boolean).join(', ');
+        if (c.notes && String(c.notes).trim()) notesMap[c.customer_id] = String(c.notes).trim();
+      });
+      var existingWeekIds = {};
+      weeklyJobs.forEach(function(j) { existingWeekIds[j.customer_id] = true; });
+      var existingTodayIds = {};
+      todaysJobs.forEach(function(j) { existingTodayIds[j.customer_id] = true; });
+
+      var todayStart = new Date(); todayStart.setHours(0,0,0,0);
+      var todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+
+      custData.customers.forEach(function(c) {
+        if (c.job_status !== 'complete') return;
+        if (!c.last_clean_date) return;
+        var lc = new Date(c.last_clean_date);
+        if (isNaN(lc.getTime())) return;
+        if (lc >= week.start && lc <= week.end && !existingWeekIds[c.customer_id]) {
+          weeklyJobs.push({
+            customer_id: c.customer_id,
+            first_name: c.first_name,
+            last_name: c.last_name,
+            address_line_1: c.address_line_1,
+            next_clean_confirmed: c.last_clean_date,
+            job_status: 'complete',
+            job_type: c.job_type
           });
-          var existingWeekIds = {};
-          weeklyJobs.forEach(function(j) { existingWeekIds[j.customer_id] = true; });
-          var existingTodayIds = {};
-          todaysJobs.forEach(function(j) { existingTodayIds[j.customer_id] = true; });
-
-          var todayStart = new Date(); todayStart.setHours(0,0,0,0);
-          var todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
-
-          custData.customers.forEach(function(c) {
-            if (c.job_status !== 'complete') return;
-            if (!c.last_clean_date) return;
-            var lc = new Date(c.last_clean_date);
-            if (isNaN(lc.getTime())) return;
-            if (lc >= week.start && lc <= week.end && !existingWeekIds[c.customer_id]) {
-              weeklyJobs.push({
-                customer_id: c.customer_id,
-                first_name: c.first_name,
-                last_name: c.last_name,
-                address_line_1: c.address_line_1,
-                next_clean_confirmed: c.last_clean_date,
-                job_status: 'complete',
-                job_type: c.job_type
-              });
-              existingWeekIds[c.customer_id] = true;
-            }
-            if (lc >= todayStart && lc <= todayEnd && !existingTodayIds[c.customer_id]) {
-              todaysJobs.push({
-                customer_id: c.customer_id,
-                first_name: c.first_name,
-                last_name: c.last_name,
-                address_line_1: c.address_line_1,
-                next_clean_confirmed: c.last_clean_date,
-                job_status: 'complete',
-                job_type: c.job_type
-              });
-              existingTodayIds[c.customer_id] = true;
-            }
-          });
+          existingWeekIds[c.customer_id] = true;
         }
-      } catch(e) {}
+        if (lc >= todayStart && lc <= todayEnd && !existingTodayIds[c.customer_id]) {
+          todaysJobs.push({
+            customer_id: c.customer_id,
+            first_name: c.first_name,
+            last_name: c.last_name,
+            address_line_1: c.address_line_1,
+            next_clean_confirmed: c.last_clean_date,
+            job_status: 'complete',
+            job_type: c.job_type
+          });
+          existingTodayIds[c.customer_id] = true;
+        }
+      });
+
+      // Attach notes to each today's job
+      todaysJobs.forEach(function(j) { j.notes = notesMap[j.customer_id] || ''; });
 
       var cleansDone = weeklyJobs.filter(function(j) { return j.job_status === 'complete'; }).length;
       var cleansOutstanding = weeklyJobs.filter(function(j) { return j.job_status !== 'complete'; }).length;
-
       document.getElementById('stat-cleans-done').textContent = cleansDone;
       document.getElementById('stat-cleans-outstanding').textContent = cleansOutstanding;
-      document.getElementById('stat-paid').textContent = '£' + (data.paid_this_week || 0).toFixed(2);
-      document.getElementById('stat-outstanding').textContent = '£' + (data.total_outstanding || 0).toFixed(2);
-
-      renderTodaysJobs(todaysJobs);
-      window.rwcTodaysJobs = todaysJobs;
-      window.rwcTodaysAddresses = todaysFullAddresses;
-      updateRouteButton(todaysJobs);
-      renderWeeklyJobs(weeklyJobs);
-      renderPaymentNotifications(data.payment_notifications || []);
-      loadReferralAlertCount();
     }
-  } catch(e) {
-    document.getElementById('dashboard-loader').innerHTML = '<div style="color:#ff8a8a;font-size:13px;">Failed to load. Check your connection.</div>';
-  }
+    document.getElementById('stat-paid').textContent = '£' + (data.paid_this_week || 0).toFixed(2);
+    document.getElementById('stat-outstanding').textContent = '£' + (data.total_outstanding || 0).toFixed(2);
+
+    renderTodaysJobs(todaysJobs);
+    window.rwcTodaysJobs = todaysJobs;
+    window.rwcTodaysAddresses = todaysFullAddresses;
+    updateRouteButton(todaysJobs);
+    renderWeeklyJobs(weeklyJobs);
+    renderPaymentNotifications(data.payment_notifications || []);
+    loadReferralAlertCount();
+  });
 }
 
 function updateRouteButton(jobs) {
@@ -1270,9 +1324,10 @@ function renderTodaysJobsWithLogic(jobs) {
     }
     var jobType = j.job_type || '';
     var jobTypeLine = jobType && jobType !== 'Window Cleaning Residential' ? '<div style="font-size:11px;color:#D4AA28;margin-top:3px;">' + jobType + '</div>' : '';
+    var noteBadge = j.notes ? '<span title="' + String(j.notes).replace(/"/g,'&quot;') + '" style="display:inline-block;background:#D4AA28;color:#0a1929;font-weight:800;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;">N</span>' : '';
     return '<div class="job-row" data-id="' + j.customer_id + '">' +
       '<div onclick="openCustomerById(\'' + j.customer_id + '\')" style="cursor:pointer;flex:1;">' +
-      '<div class="job-name">' + j.first_name + ' ' + j.last_name + '</div>' +
+      '<div class="job-name">' + j.first_name + ' ' + j.last_name + noteBadge + '</div>' +
       '<div class="job-address">' + j.address_line_1 + '</div>' + jobTypeLine + '</div>' +
       '<div class="job-actions">' + btn + '</div></div>';
   }).join('') + '</div>';
@@ -1282,6 +1337,7 @@ async function updateStatus(customerId, newStatus, btn) {
   btn.disabled = true;
   btn.textContent = '...';
   try {
+    invalidateCache();
     var result = await apiPost({ action: 'updateJobStatus', customer_id: customerId, status: newStatus });
     if (result.success) { loadDashboard(); }
     else { btn.disabled = false; btn.textContent = 'Retry'; }
@@ -1292,6 +1348,7 @@ async function markPaid(customerId, btn) {
   btn.disabled = true;
   btn.textContent = '...';
   try {
+    invalidateCache();
     var result = await apiPost({ action: 'markPaid', customer_id: customerId });
     if (result.success) {
       loadDashboard();
@@ -1378,19 +1435,15 @@ async function refreshOutstandingPanel() {
 async function loadCustomers() {
   document.getElementById('customers-loader').style.display = 'block';
   document.getElementById('customers-list').innerHTML = '';
-  try {
-    var data = await apiGet({ action: 'getAllCustomers' });
+  apiGetCached({ action: 'getAllCustomers' }, 'allCustomers', function(data, fromCache) {
     document.getElementById('customers-loader').style.display = 'none';
-    if (data.success && data.customers) {
+    if (data && data.success && data.customers) {
       allCustomers = data.customers;
       renderCustomerList(allCustomers);
-    } else {
+    } else if (!fromCache) {
       document.getElementById('customers-list').innerHTML = '<div style="color:#ff8a8a;font-size:13px;padding:20px 0;">Failed to load customers.</div>';
     }
-  } catch(e) {
-    document.getElementById('customers-loader').style.display = 'none';
-    document.getElementById('customers-list').innerHTML = '<div style="color:#ff8a8a;font-size:13px;padding:20px 0;">Connection error.</div>';
-  }
+  });
 }
 
 function renderCustomerList(customers) {
@@ -1530,6 +1583,7 @@ async function saveCustomerEdits() {
   document.getElementById('edit-error').style.display = 'none';
 
   try {
+    invalidateCache();
     var result = await apiPost({
       action: 'updateCustomer',
       customer_id: currentCustomer.customer_id,
@@ -1613,6 +1667,7 @@ async function submitNewCustomer() {
   btn.textContent = 'Adding...';
 
   try {
+    invalidateCache();
     var result = await apiPost({
       action: 'addCustomer',
       first_name: firstName,
@@ -1695,6 +1750,7 @@ async function submitNewJob() {
   btn.textContent = 'Saving...';
 
   try {
+    invalidateCache();
     var result = await apiPost({
       action: 'addCustomer',
       first_name: firstName,
@@ -1774,6 +1830,7 @@ function fixPhone(phone) {
 async function deleteCustomer() {
   if (!confirm('Move ' + currentCustomer.first_name + ' ' + currentCustomer.last_name + ' to Inactive Addresses? This removes them from your active customer list.')) return;
   try {
+    invalidateCache();
     var result = await apiPost({ action: 'deleteCustomer', customer_id: currentCustomer.customer_id });
     if (result.success) {
       closeModal('customer-modal');
@@ -1827,9 +1884,10 @@ function loadSchedule() {
     renderScheduleList();
     return;
   }
-  apiGet({ action: 'getAllCustomers' }).then(function(data) {
-    if (data.success) {
+  apiGetCached({ action: 'getAllCustomers' }, 'allCustomers', function(data) {
+    if (data && data.success) {
       scheduleCustomers = data.customers;
+      allCustomers = data.customers;
       renderCalendar();
       renderScheduleList();
     }
@@ -1910,13 +1968,22 @@ function showDayJobs(dateStr, jobs) {
   } else {
     list.innerHTML = '<div id="day-jobs-sortable">' + jobs.map(function(c) {
       var jobType = c.job_type || 'Window Cleaning Residential';
+      var isFirstClean = !c.first_clean_completed || String(c.first_clean_completed).trim() === '';
+      var firstPrice = parseFloat(c.first_clean_price) || 0;
+      var regPrice = parseFloat(c.regular_clean_price) || 0;
+      var displayPrice = (isFirstClean && firstPrice > 0) ? firstPrice : regPrice;
+      var priceLabel = (isFirstClean && firstPrice > 0)
+        ? '<div style="font-size:9px;color:#D4AA28;font-weight:700;text-align:right;margin-bottom:2px;">1ST CLEAN</div>'
+        : '';
       return '<div class="job-row" data-id="' + c.customer_id + '" style="cursor:grab;">' +
         '<span style="color:#4a7aaa;font-size:16px;margin-right:8px;">&#9776;</span>' +
         '<div onclick="openCustomerById(\'' + c.customer_id + '\')" style="cursor:pointer;flex:1;">' +
         '<div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
         '<div style="font-size:12px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div>' +
         '<div style="font-size:11px;color:#D4AA28;margin-top:3px;">' + jobType + '</div></div>' +
-        '<span style="font-size:12px;color:#D4AA28;font-weight:600;">&#163;' + parseFloat(c.regular_clean_price || 0).toFixed(2) + '</span>' +
+        '<div style="text-align:right;">' + priceLabel +
+        '<span style="font-size:12px;color:#D4AA28;font-weight:600;">&#163;' + displayPrice.toFixed(2) + '</span>' +
+        '</div>' +
         '</div>';
     }).join('') + '</div>';
     initDragSort('day-jobs-sortable', saveDayOrder);
@@ -1936,6 +2003,7 @@ function saveDayOrder() {
     }
   });
   apiPost({ action: 'saveJobOrder', order: order });
+  invalidateCache();
 }
 
 function openCustomerById(customerId) {
@@ -2049,6 +2117,7 @@ function openSetDateModal(customerId, currentDate) {
   var date = prompt('Set confirmed clean date for ' + name + ':\n(Format: YYYY-MM-DD)', currentDate || '');
   if (!date) return;
   apiPost({ action: 'setConfirmedDate', customer_id: customerId, date: date }).then(function(result) {
+    invalidateCache();
     if (result.success) {
       var idx = scheduleCustomers.findIndex(function(x) { return x.customer_id == customerId; });
       if (idx > -1) scheduleCustomers[idx].next_clean_confirmed = date;
