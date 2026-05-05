@@ -955,47 +955,85 @@ select.form-input option {
       <button class="btn btn-outline" onclick="closeModal('add-job-modal')" style="font-size:18px;padding:4px 10px;">✕</button>
     </div>
 
-    <div class="form-row">
+    <!-- Toggle: existing vs new -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button type="button" class="btn btn-gold" id="job-mode-existing" style="flex:1;font-size:13px;padding:10px;" onclick="setJobMode('existing')">Existing customer</button>
+      <button type="button" class="btn btn-outline" id="job-mode-new" style="flex:1;font-size:13px;padding:10px;" onclick="setJobMode('new')">New customer</button>
+    </div>
+
+    <!-- EXISTING CUSTOMER PANEL -->
+    <div id="job-existing-panel">
       <div class="form-group">
-        <label class="form-label">First name *</label>
-        <input class="form-input" id="job-firstname" placeholder="First name">
+        <label class="form-label">Search customer *</label>
+        <input class="form-input" id="job-search" placeholder="Type name, address or postcode..." oninput="filterJobCustomers()" autocomplete="off">
+        <div id="job-search-results" style="max-height:180px;overflow-y:auto;margin-top:6px;border:1px solid #1a3a5a;border-radius:6px;display:none;"></div>
+      </div>
+      <div id="job-selected-info" style="display:none;background:#0f2236;border:1px solid #1a3a5a;border-radius:6px;padding:10px;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:#D4AA28;" id="job-selected-name"></div>
+        <div style="font-size:11px;color:#4a7aaa;margin-top:2px;" id="job-selected-address"></div>
+        <div style="font-size:11px;color:#7a9abf;margin-top:4px;" id="job-selected-meta"></div>
       </div>
       <div class="form-group">
-        <label class="form-label">Last name *</label>
-        <input class="form-input" id="job-lastname" placeholder="Last name">
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Address line 1 *</label>
-      <input class="form-input" id="job-address1" placeholder="House number and street">
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="form-label">Town *</label>
-        <input class="form-input" id="job-town" placeholder="Town">
+        <label class="form-label">Job type *</label>
+        <select class="form-input" id="job-existing-type">
+          <option value="Window Cleaning Residential">Window Cleaning Residential</option>
+          <option value="Window Cleaning Commercial">Window Cleaning Commercial</option>
+          <option value="Fascia/Soffit">Fascia/Soffit</option>
+          <option value="Conservatory">Conservatory</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Postcode</label>
-        <input class="form-input" id="job-postcode" placeholder="DN11...">
+        <label class="form-label">Price for this clean (£) *</label>
+        <input class="form-input" id="job-existing-price" type="number" step="0.01" placeholder="0.00">
+        <div style="font-size:10px;color:#7a9abf;margin-top:4px;">Pre-filled from their regular price. Edit if this clean is different.</div>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Phone (optional)</label>
-      <input class="form-input" id="job-phone" type="tel" placeholder="07...">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Job type *</label>
-      <select class="form-input" id="job-type">
-        <option value="Window Cleaning Residential">Window Cleaning Residential</option>
-        <option value="Window Cleaning Commercial">Window Cleaning Commercial</option>
-        <option value="Fascia/Soffit">Fascia/Soffit</option>
-        <option value="Conservatory">Conservatory</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Price (£) *</label>
-      <input class="form-input" id="job-price" type="number" step="0.01" placeholder="0.00">
+
+    <!-- NEW CUSTOMER PANEL -->
+    <div id="job-new-panel" style="display:none;">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First name *</label>
+          <input class="form-input" id="job-firstname" placeholder="First name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last name *</label>
+          <input class="form-input" id="job-lastname" placeholder="Last name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Address line 1 *</label>
+        <input class="form-input" id="job-address1" placeholder="House number and street">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Town *</label>
+          <input class="form-input" id="job-town" placeholder="Town">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Postcode</label>
+          <input class="form-input" id="job-postcode" placeholder="DN11...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone (optional)</label>
+        <input class="form-input" id="job-phone" type="tel" placeholder="07...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Job type *</label>
+        <select class="form-input" id="job-type">
+          <option value="Window Cleaning Residential">Window Cleaning Residential</option>
+          <option value="Window Cleaning Commercial">Window Cleaning Commercial</option>
+          <option value="Fascia/Soffit">Fascia/Soffit</option>
+          <option value="Conservatory">Conservatory</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Price (£) *</label>
+        <input class="form-input" id="job-price" type="number" step="0.01" placeholder="0.00">
+      </div>
     </div>
 
     <div id="add-job-success" class="success-msg"></div>
@@ -1706,15 +1744,23 @@ async function submitNewCustomer() {
 }
 
 // ADD JOB (one-off)
+var selectedJobCustomer = null;
+
 function openAddJob() {
   if (!currentDayDate) {
     alert('Tap a day on the calendar first.');
     return;
   }
-  ['job-firstname','job-lastname','job-address1','job-town','job-postcode','job-phone','job-price'].forEach(function(id) {
-    document.getElementById(id).value = '';
+  ['job-firstname','job-lastname','job-address1','job-town','job-postcode','job-phone','job-price','job-search','job-existing-price'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('job-type').value = 'Window Cleaning Residential';
+  document.getElementById('job-existing-type').value = 'Window Cleaning Residential';
+  document.getElementById('job-search-results').style.display = 'none';
+  document.getElementById('job-search-results').innerHTML = '';
+  document.getElementById('job-selected-info').style.display = 'none';
+  selectedJobCustomer = null;
+  setJobMode('existing');
   var d = new Date(currentDayDate + 'T12:00:00');
   var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1724,26 +1770,174 @@ function openAddJob() {
   document.getElementById('add-job-btn').disabled = false;
   document.getElementById('add-job-btn').textContent = 'Save job';
   document.getElementById('add-job-modal').classList.add('open');
+  // Make sure customer list is loaded for the search
+  if (!allCustomers || allCustomers.length === 0) {
+    apiGetCached({ action: 'getAllCustomers' }, 'allCustomers', function(data) {
+      if (data && data.success) allCustomers = data.customers;
+    });
+  }
+}
+
+function setJobMode(mode) {
+  var existingBtn = document.getElementById('job-mode-existing');
+  var newBtn = document.getElementById('job-mode-new');
+  if (mode === 'existing') {
+    existingBtn.className = 'btn btn-gold';
+    newBtn.className = 'btn btn-outline';
+    document.getElementById('job-existing-panel').style.display = 'block';
+    document.getElementById('job-new-panel').style.display = 'none';
+  } else {
+    existingBtn.className = 'btn btn-outline';
+    newBtn.className = 'btn btn-gold';
+    document.getElementById('job-existing-panel').style.display = 'none';
+    document.getElementById('job-new-panel').style.display = 'block';
+  }
+  existingBtn.dataset.mode = mode;
+}
+
+function filterJobCustomers() {
+  var q = document.getElementById('job-search').value.trim().toLowerCase();
+  var resultsEl = document.getElementById('job-search-results');
+  if (!q || q.length < 2) {
+    resultsEl.style.display = 'none';
+    resultsEl.innerHTML = '';
+    return;
+  }
+  var matches = (allCustomers || []).filter(function(c) {
+    var hay = ((c.first_name || '') + ' ' + (c.last_name || '') + ' ' + (c.address_line_1 || '') + ' ' + (c.town || '') + ' ' + (c.postcode || '')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  }).slice(0, 8);
+  if (!matches.length) {
+    resultsEl.innerHTML = '<div style="padding:10px;color:#7a9abf;font-size:12px;">No matches. Try a different search, or use the New customer tab.</div>';
+    resultsEl.style.display = 'block';
+    return;
+  }
+  resultsEl.innerHTML = matches.map(function(c) {
+    return '<div onclick="selectJobCustomer(\'' + c.customer_id + '\')" style="padding:10px;border-bottom:1px solid #1a3a5a;cursor:pointer;">' +
+      '<div style="font-size:13px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
+      '<div style="font-size:11px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div>' +
+      '</div>';
+  }).join('');
+  resultsEl.style.display = 'block';
+}
+
+function selectJobCustomer(customerId) {
+  var c = (allCustomers || []).find(function(x) { return String(x.customer_id) === String(customerId); });
+  if (!c) return;
+  selectedJobCustomer = c;
+  document.getElementById('job-search').value = c.first_name + ' ' + c.last_name;
+  document.getElementById('job-search-results').style.display = 'none';
+  document.getElementById('job-selected-name').textContent = c.first_name + ' ' + c.last_name;
+  document.getElementById('job-selected-address').textContent = [c.address_line_1, c.town, c.postcode].filter(Boolean).join(', ');
+  var meta = [];
+  if (c.clean_frequency) meta.push('Every ' + c.clean_frequency + ' weeks');
+  var bal = parseFloat(c.outstanding_balance) || 0;
+  if (bal > 0) meta.push('Owes £' + bal.toFixed(2));
+  document.getElementById('job-selected-meta').textContent = meta.join(' · ');
+  document.getElementById('job-selected-info').style.display = 'block';
+  // Pre-fill price: first clean price if no first clean done yet, else regular
+  var isFirstClean = !c.first_clean_completed || String(c.first_clean_completed).trim() === '';
+  var prefill = isFirstClean && parseFloat(c.first_clean_price) > 0
+    ? parseFloat(c.first_clean_price)
+    : parseFloat(c.regular_clean_price) || 0;
+  document.getElementById('job-existing-price').value = prefill > 0 ? prefill.toFixed(2) : '';
+  // Pre-fill job type
+  var typeSel = document.getElementById('job-existing-type');
+  typeSel.selectedIndex = 0;
+  if (c.job_type) {
+    for (var i = 0; i < typeSel.options.length; i++) {
+      if (typeSel.options[i].value === c.job_type) { typeSel.selectedIndex = i; break; }
+    }
+  }
 }
 
 async function submitNewJob() {
   var btn = document.getElementById('add-job-btn');
+  var mode = document.getElementById('job-mode-existing').dataset.mode || 'existing';
+  document.getElementById('add-job-success').style.display = 'none';
+  document.getElementById('add-job-error').style.display = 'none';
+
+  if (mode === 'existing') {
+    if (!selectedJobCustomer) {
+      showJobError('Please search and select a customer.');
+      return;
+    }
+    var price = document.getElementById('job-existing-price').value.trim();
+    var jobType = document.getElementById('job-existing-type').value;
+    if (!price || parseFloat(price) <= 0) {
+      showJobError('Please enter a price for this clean.');
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try {
+      invalidateCache();
+      var c = selectedJobCustomer;
+      var priceChanged = parseFloat(price) !== parseFloat(c.regular_clean_price);
+      var typeChanged = jobType !== (c.job_type || 'Window Cleaning Residential');
+      if (priceChanged || typeChanged) {
+        await apiPost({
+          action: 'updateCustomer',
+          customer_id: c.customer_id,
+          regular_clean_price: price,
+          job_type: jobType
+        });
+      }
+      var bookResult = await apiPost({
+        action: 'setConfirmedDate',
+        customer_id: c.customer_id,
+        date: currentDayDate
+      });
+      if (bookResult.success) {
+        document.getElementById('add-job-success').textContent = '✅ Job booked for ' + c.first_name + ' ' + c.last_name;
+        document.getElementById('add-job-success').style.display = 'block';
+        btn.textContent = 'Saved!';
+        allCustomers = [];
+        scheduleCustomers = [];
+        loadSchedule();
+        loadDashboard();
+        setTimeout(function() { closeModal('add-job-modal'); }, 1200);
+      } else {
+        showJobError(bookResult.error || 'Could not save. Try again.');
+        btn.disabled = false; btn.textContent = 'Save job';
+      }
+    } catch(e) {
+      showJobError('Connection error. Try again.');
+      btn.disabled = false; btn.textContent = 'Save job';
+    }
+    return;
+  }
+
+  // NEW CUSTOMER PATH
   var firstName = document.getElementById('job-firstname').value.trim();
   var lastName = document.getElementById('job-lastname').value.trim();
   var address1 = document.getElementById('job-address1').value.trim();
   var town = document.getElementById('job-town').value.trim();
   var postcode = document.getElementById('job-postcode').value.trim();
   var phone = document.getElementById('job-phone').value.trim();
-  var jobType = document.getElementById('job-type').value;
-  var price = document.getElementById('job-price').value.trim();
+  var jobType2 = document.getElementById('job-type').value;
+  var price2 = document.getElementById('job-price').value.trim();
 
-  document.getElementById('add-job-success').style.display = 'none';
-  document.getElementById('add-job-error').style.display = 'none';
-
-  if (!firstName || !lastName || !address1 || !town || !price) {
-    document.getElementById('add-job-error').textContent = 'Please fill in name, address, town and price.';
-    document.getElementById('add-job-error').style.display = 'block';
+  if (!firstName || !lastName || !address1 || !town || !price2) {
+    showJobError('Please fill in name, address, town and price.');
     return;
+  }
+
+  // Duplicate check
+  var existingMatch = (allCustomers || []).find(function(c) {
+    var sameName = (c.first_name || '').trim().toLowerCase() === firstName.toLowerCase()
+                && (c.last_name || '').trim().toLowerCase() === lastName.toLowerCase();
+    var sameAddr = (c.address_line_1 || '').trim().toLowerCase() === address1.toLowerCase();
+    return sameName || sameAddr;
+  });
+  if (existingMatch) {
+    var ok = confirm('A customer that looks similar already exists:\n\n' + existingMatch.first_name + ' ' + existingMatch.last_name + ' — ' + existingMatch.address_line_1 + '\n\nUse the "Existing customer" tab instead?\n\nOK = cancel and switch tab\nCancel = create as new anyway');
+    if (ok) {
+      setJobMode('existing');
+      document.getElementById('job-search').value = firstName + (lastName ? ' ' + lastName : '');
+      filterJobCustomers();
+      return;
+    }
   }
 
   btn.disabled = true;
@@ -1761,11 +1955,11 @@ async function submitNewJob() {
       postcode: postcode,
       contact_number: phone,
       email: '',
-      regular_clean_price: price,
-      first_clean_price: price,
+      regular_clean_price: price2,
+      first_clean_price: price2,
       clean_frequency: '',
       notes: 'One-off job',
-      job_type: jobType,
+      job_type: jobType2,
       payment_method: 'Bank Transfer',
       next_clean_confirmed: currentDayDate
     });
@@ -1778,21 +1972,21 @@ async function submitNewJob() {
       scheduleCustomers = [];
       loadSchedule();
       loadDashboard();
-      setTimeout(function() {
-        closeModal('add-job-modal');
-      }, 1200);
+      setTimeout(function() { closeModal('add-job-modal'); }, 1200);
     } else {
-      document.getElementById('add-job-error').textContent = result.error || 'Something went wrong. Please try again.';
-      document.getElementById('add-job-error').style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Save job';
+      showJobError(result.error || 'Something went wrong. Please try again.');
+      btn.disabled = false; btn.textContent = 'Save job';
     }
   } catch(e) {
-    document.getElementById('add-job-error').textContent = 'Connection error. Please try again.';
-    document.getElementById('add-job-error').style.display = 'block';
-    btn.disabled = false;
-    btn.textContent = 'Save job';
+    showJobError('Connection error. Please try again.');
+    btn.disabled = false; btn.textContent = 'Save job';
   }
+}
+
+function showJobError(msg) {
+  var el = document.getElementById('add-job-error');
+  el.textContent = msg;
+  el.style.display = 'block';
 }
 
 // ============================================================
