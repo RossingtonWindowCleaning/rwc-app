@@ -1216,6 +1216,35 @@ function renderDashboard(data) {
       var todayStart = new Date(); todayStart.setHours(0,0,0,0);
       var todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
 
+      // Build a quick lookup: customer_id -> one-off info (only if today)
+      var oneOffMap = {};
+      var todayStr = todayStart.getFullYear() + '-' + String(todayStart.getMonth()+1).padStart(2,'0') + '-' + String(todayStart.getDate()).padStart(2,'0');
+      custData.customers.forEach(function(c) {
+        if (!c.one_off_job_date) return;
+        var ooDate = String(c.one_off_job_date).substring(0, 10);
+        if (ooDate === todayStr) {
+          oneOffMap[c.customer_id] = {
+            price: parseFloat(c.one_off_job_price) || 0,
+            job_type: (c.one_off_job_type || '').trim()
+          };
+        }
+      });
+
+      // Add any customers with a one-off job today who weren't already in todaysJobs
+      custData.customers.forEach(function(c) {
+        if (!oneOffMap[c.customer_id]) return;
+        if (existingTodayIds[c.customer_id]) return;
+        todaysJobs.push({
+          customer_id: c.customer_id,
+          first_name: c.first_name,
+          last_name: c.last_name,
+          address_line_1: c.address_line_1,
+          job_status: c.job_status || 'not_scheduled',
+          job_type: oneOffMap[c.customer_id].job_type || c.job_type
+        });
+        existingTodayIds[c.customer_id] = true;
+      });
+
       custData.customers.forEach(function(c) {
         if (c.job_status !== 'complete') return;
         if (!c.last_clean_date) return;
@@ -1244,6 +1273,14 @@ function renderDashboard(data) {
             job_type: c.job_type
           });
           existingTodayIds[c.customer_id] = true;
+        }
+      });
+
+      // Tag any today's job that has a one-off booked for today, and override its type.
+      todaysJobs.forEach(function(j) {
+        if (oneOffMap[j.customer_id]) {
+          j.is_one_off = true;
+          j.job_type = oneOffMap[j.customer_id].job_type || j.job_type;
         }
       });
 
@@ -1363,9 +1400,10 @@ function renderTodaysJobsWithLogic(jobs) {
     var jobType = j.job_type || '';
     var jobTypeLine = jobType && jobType !== 'Window Cleaning Residential' ? '<div style="font-size:11px;color:#D4AA28;margin-top:3px;">' + jobType + '</div>' : '';
     var noteBadge = j.notes ? '<span title="' + String(j.notes).replace(/"/g,'&quot;') + '" style="display:inline-block;background:#D4AA28;color:#0a1929;font-weight:800;font-size:10px;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;">N</span>' : '';
+    var oneOffBadge = j.is_one_off ? '<span style="display:inline-block;background:#0a1929;color:#D4AA28;border:1px solid #D4AA28;font-weight:800;font-size:9px;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:middle;letter-spacing:0.5px;">ONE-OFF</span>' : '';
     return '<div class="job-row" data-id="' + j.customer_id + '">' +
       '<div onclick="openCustomerById(\'' + j.customer_id + '\')" style="cursor:pointer;flex:1;">' +
-      '<div class="job-name">' + j.first_name + ' ' + j.last_name + noteBadge + '</div>' +
+      '<div class="job-name">' + j.first_name + ' ' + j.last_name + noteBadge + oneOffBadge + '</div>' +
       '<div class="job-address">' + j.address_line_1 + '</div>' + jobTypeLine + '</div>' +
       '<div class="job-actions">' + btn + '</div></div>';
   }).join('') + '</div>';
