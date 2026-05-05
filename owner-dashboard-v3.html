@@ -886,8 +886,8 @@ select.form-input option {
         <input class="form-input" id="new-firstname" placeholder="First name">
       </div>
       <div class="form-group">
-        <label class="form-label">Last name *</label>
-        <input class="form-input" id="new-lastname" placeholder="Last name">
+        <label class="form-label">Last name</label>
+        <input class="form-input" id="new-lastname" placeholder="Optional">
       </div>
     </div>
     <div class="form-group">
@@ -998,8 +998,8 @@ select.form-input option {
           <input class="form-input" id="job-firstname" placeholder="First name">
         </div>
         <div class="form-group">
-          <label class="form-label">Last name *</label>
-          <input class="form-input" id="job-lastname" placeholder="Last name">
+          <label class="form-label">Last name</label>
+          <input class="form-input" id="job-lastname" placeholder="Optional">
         </div>
       </div>
       <div class="form-group">
@@ -1695,7 +1695,7 @@ async function submitNewCustomer() {
   document.getElementById('add-success').style.display = 'none';
   document.getElementById('add-error').style.display = 'none';
 
-  if (!firstName || !lastName || !address1 || !town || !phone || !price || !frequency) {
+  if (!firstName || !address1 || !town || !phone || !price || !frequency) {
     document.getElementById('add-error').textContent = 'Please fill in all required fields.';
     document.getElementById('add-error').style.display = 'block';
     return;
@@ -1770,12 +1770,24 @@ function openAddJob() {
   document.getElementById('add-job-btn').disabled = false;
   document.getElementById('add-job-btn').textContent = 'Save job';
   document.getElementById('add-job-modal').classList.add('open');
-  // Make sure customer list is loaded for the search
-  if (!allCustomers || allCustomers.length === 0) {
-    apiGetCached({ action: 'getAllCustomers' }, 'allCustomers', function(data) {
-      if (data && data.success) allCustomers = data.customers;
-    });
-  }
+
+  // Always force a fresh customer fetch when opening the modal
+  // — guarantees the search has the latest list including just-added customers.
+  var searchInput = document.getElementById('job-search');
+  searchInput.placeholder = 'Loading customers...';
+  searchInput.disabled = true;
+  apiGet({ action: 'getAllCustomers' }).then(function(data) {
+    if (data && data.success && data.customers) {
+      allCustomers = data.customers;
+      try { setCachedData('allCustomers', data); } catch(e) {}
+    }
+    searchInput.disabled = false;
+    searchInput.placeholder = 'Type name, address or postcode...';
+    searchInput.focus();
+  }).catch(function() {
+    searchInput.disabled = false;
+    searchInput.placeholder = 'Type name, address or postcode...';
+  });
 }
 
 function setJobMode(mode) {
@@ -1798,24 +1810,29 @@ function setJobMode(mode) {
 function filterJobCustomers() {
   var q = document.getElementById('job-search').value.trim().toLowerCase();
   var resultsEl = document.getElementById('job-search-results');
-  if (!q || q.length < 2) {
+  if (!q) {
     resultsEl.style.display = 'none';
     resultsEl.innerHTML = '';
     return;
   }
-  var matches = (allCustomers || []).filter(function(c) {
-    var hay = ((c.first_name || '') + ' ' + (c.last_name || '') + ' ' + (c.address_line_1 || '') + ' ' + (c.town || '') + ' ' + (c.postcode || '')).toLowerCase();
+  if (!allCustomers || allCustomers.length === 0) {
+    resultsEl.innerHTML = '<div style="padding:10px;color:#ffb84d;font-size:12px;">Customer list still loading. Wait a moment and try again.</div>';
+    resultsEl.style.display = 'block';
+    return;
+  }
+  var matches = allCustomers.filter(function(c) {
+    var hay = ((c.first_name || '') + ' ' + (c.last_name || '') + ' ' + (c.address_line_1 || '') + ' ' + (c.address_line_2 || '') + ' ' + (c.town || '') + ' ' + (c.postcode || '')).toLowerCase();
     return hay.indexOf(q) !== -1;
-  }).slice(0, 8);
+  }).slice(0, 10);
   if (!matches.length) {
-    resultsEl.innerHTML = '<div style="padding:10px;color:#7a9abf;font-size:12px;">No matches. Try a different search, or use the New customer tab.</div>';
+    resultsEl.innerHTML = '<div style="padding:10px;color:#7a9abf;font-size:12px;">No matches in ' + allCustomers.length + ' customers. Try a different search, or use the New customer tab.</div>';
     resultsEl.style.display = 'block';
     return;
   }
   resultsEl.innerHTML = matches.map(function(c) {
     return '<div onclick="selectJobCustomer(\'' + c.customer_id + '\')" style="padding:10px;border-bottom:1px solid #1a3a5a;cursor:pointer;">' +
-      '<div style="font-size:13px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
-      '<div style="font-size:11px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div>' +
+      '<div style="font-size:13px;font-weight:600;">' + (c.first_name || '') + ' ' + (c.last_name || '') + '</div>' +
+      '<div style="font-size:11px;color:#4a7aaa;">' + (c.address_line_1 || '') + (c.town ? ', ' + c.town : '') + '</div>' +
       '</div>';
   }).join('');
   resultsEl.style.display = 'block';
@@ -1918,8 +1935,8 @@ async function submitNewJob() {
   var jobType2 = document.getElementById('job-type').value;
   var price2 = document.getElementById('job-price').value.trim();
 
-  if (!firstName || !lastName || !address1 || !town || !price2) {
-    showJobError('Please fill in name, address, town and price.');
+  if (!firstName || !address1 || !town || !price2) {
+    showJobError('Please fill in first name, address, town and price.');
     return;
   }
 
