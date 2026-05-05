@@ -2110,7 +2110,9 @@ function changeMonth(dir) {
 
 function getJobsForDate(dateStr) {
   return scheduleCustomers.filter(function(c) {
-    return c.next_clean_confirmed && c.next_clean_confirmed.substring(0, 10) === dateStr;
+    var regularMatch = c.next_clean_confirmed && c.next_clean_confirmed.substring(0, 10) === dateStr;
+    var oneOffMatch  = c.one_off_job_date    && c.one_off_job_date.substring(0, 10)    === dateStr;
+    return regularMatch || oneOffMatch;
   }).sort(function(a, b) {
     return (parseInt(a.job_order) || 999) - (parseInt(b.job_order) || 999);
   });
@@ -2173,27 +2175,32 @@ function showDayJobs(dateStr, jobs) {
     list.innerHTML = '<div style="color:#4a7aaa;font-size:13px;">No confirmed cleans on this date</div>';
   } else {
     list.innerHTML = '<div id="day-jobs-sortable">' + jobs.map(function(c) {
-      var priceOverride = parseFloat(c.next_clean_price_override);
-      var typeOverride = (c.next_clean_type_override || '').trim();
-      var hasOverride = priceOverride > 0 || typeOverride;
-      var jobType = typeOverride || c.job_type || 'Window Cleaning Residential';
+      // Check whether this customer is here for a one-off on this day.
+      var oneOffDateStr = c.one_off_job_date ? c.one_off_job_date.substring(0, 10) : '';
+      var isOneOffToday = oneOffDateStr === dateStr;
+
+      var oneOffPrice = parseFloat(c.one_off_job_price) || 0;
+      var oneOffType  = (c.one_off_job_type || '').trim();
+
       var isFirstClean = !c.first_clean_completed || String(c.first_clean_completed).trim() === '';
       var firstPrice = parseFloat(c.first_clean_price) || 0;
       var regPrice = parseFloat(c.regular_clean_price) || 0;
-      var displayPrice;
-      if (priceOverride > 0) {
-        displayPrice = priceOverride;
-      } else if (isFirstClean && firstPrice > 0) {
-        displayPrice = firstPrice;
-      } else {
-        displayPrice = regPrice;
-      }
-      var priceLabel = '';
-      if (hasOverride) {
+
+      var jobType, displayPrice, priceLabel = '';
+      if (isOneOffToday) {
+        jobType = oneOffType || c.job_type || 'Window Cleaning Residential';
+        displayPrice = oneOffPrice > 0 ? oneOffPrice : regPrice;
         priceLabel = '<div style="font-size:9px;color:#D4AA28;font-weight:700;text-align:right;margin-bottom:2px;">ONE-OFF</div>';
-      } else if (isFirstClean && firstPrice > 0) {
-        priceLabel = '<div style="font-size:9px;color:#D4AA28;font-weight:700;text-align:right;margin-bottom:2px;">1ST CLEAN</div>';
+      } else {
+        jobType = c.job_type || 'Window Cleaning Residential';
+        if (isFirstClean && firstPrice > 0) {
+          displayPrice = firstPrice;
+          priceLabel = '<div style="font-size:9px;color:#D4AA28;font-weight:700;text-align:right;margin-bottom:2px;">1ST CLEAN</div>';
+        } else {
+          displayPrice = regPrice;
+        }
       }
+
       return '<div class="job-row" data-id="' + c.customer_id + '" style="cursor:grab;">' +
         '<span style="color:#4a7aaa;font-size:16px;margin-right:8px;">&#9776;</span>' +
         '<div onclick="openCustomerById(\'' + c.customer_id + '\')" style="cursor:pointer;flex:1;">' +
