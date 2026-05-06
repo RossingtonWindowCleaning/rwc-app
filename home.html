@@ -456,12 +456,49 @@ async function init() {
     }
 
     var todayStr = new Date().toISOString().substring(0, 10);
-    if (c.next_clean_confirmed) {
-      var isToday = c.next_clean_confirmed.substring(0, 10) === todayStr;
-      document.getElementById('next-clean').textContent = isToday ? 'Today' : formatDate(c.next_clean_confirmed);
-      document.getElementById('next-clean-badge').textContent = isToday ? 'Scheduled for today' : 'Confirmed';
-      document.getElementById('next-clean-badge').className = isToday ? 'badge badge-amber' : 'badge badge-green';
-      document.getElementById('next-clean-sub').textContent = isToday ? 'Your clean is booked for today' : (c.gate_access ? 'Please leave your gate open' : '');
+
+    // Decide which booking to show: whichever has the closest date.
+    var regularDate = c.next_clean_confirmed ? c.next_clean_confirmed.substring(0, 10) : null;
+    var oneOffDate  = c.one_off_job_date    ? c.one_off_job_date.substring(0, 10)    : null;
+
+    var displayDate = null;
+    var displayIsOneOff = false;
+    if (regularDate && oneOffDate) {
+      // Both booked — show whichever is sooner
+      displayIsOneOff = oneOffDate < regularDate;
+      displayDate = displayIsOneOff ? oneOffDate : regularDate;
+    } else if (oneOffDate) {
+      displayDate = oneOffDate;
+      displayIsOneOff = true;
+    } else if (regularDate) {
+      displayDate = regularDate;
+    }
+
+    // Friendly label for the one-off job type
+    function jobTypeWord(t) {
+      if (!t) return 'clean';
+      var s = String(t).toLowerCase();
+      if (s.indexOf('conservatory') !== -1) return 'conservatory clean';
+      if (s.indexOf('fascia') !== -1 || s.indexOf('soffit') !== -1) return 'fascia & soffit clean';
+      if (s.indexOf('window') !== -1) return 'window clean';
+      return s;
+    }
+
+    if (displayDate) {
+      var isToday = displayDate === todayStr;
+      document.getElementById('next-clean').textContent = isToday ? 'Today' : formatDate(displayDate);
+      if (displayIsOneOff) {
+        var word = jobTypeWord(c.one_off_job_type);
+        document.getElementById('next-clean-badge').textContent = isToday ? 'Scheduled for today' : 'Confirmed';
+        document.getElementById('next-clean-badge').className = isToday ? 'badge badge-amber' : 'badge badge-green';
+        document.getElementById('next-clean-sub').textContent = isToday
+          ? ('Your ' + word + ' is booked for today')
+          : ('Your ' + word + ' is confirmed' + (c.gate_access ? ' — please leave your gate open' : ''));
+      } else {
+        document.getElementById('next-clean-badge').textContent = isToday ? 'Scheduled for today' : 'Confirmed';
+        document.getElementById('next-clean-badge').className = isToday ? 'badge badge-amber' : 'badge badge-green';
+        document.getElementById('next-clean-sub').textContent = isToday ? 'Your clean is booked for today' : (c.gate_access ? 'Please leave your gate open' : '');
+      }
     } else if (c.next_clean_approx) {
       document.getElementById('next-clean').textContent = formatDate(c.next_clean_approx) + ' (approx)';
       document.getElementById('next-clean-badge').textContent = 'Date to be confirmed';
