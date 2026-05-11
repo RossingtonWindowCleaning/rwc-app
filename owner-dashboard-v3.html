@@ -1586,7 +1586,7 @@ function openCustomer(customerId) {
   if (isConfirmedFuture) {
     document.getElementById('modal-next-clean').textContent = formatDate(c.next_clean_confirmed) + ' (confirmed)';
   } else {
-    var approx = calcNextClean(c.first_clean_completed, c.clean_frequency);
+    var approx = calcNextClean(c.last_clean_date || c.first_clean_completed, c.clean_frequency);
     document.getElementById('modal-next-clean').textContent = approx ? approx + ' (approx)' : 'Not set';
   }
   document.getElementById('modal-referrals').textContent = c.referral_count || '0';
