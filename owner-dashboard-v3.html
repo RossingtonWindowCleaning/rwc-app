@@ -2312,7 +2312,7 @@ function renderScheduleList() {
   if (noDate.length) {
     html += '<div style="font-size:11px;color:#4a7aaa;padding:10px 0 4px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;">No confirmed date</div>';
     html += noDate.map(function(c) {
-      var approx = calcNextClean(c.first_clean_completed, c.clean_frequency);
+      var approx = calcNextClean(c.last_clean_date || c.first_clean_completed, c.clean_frequency);
       return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
         '<div><div style="font-size:14px;font-weight:600;">' + c.first_name + ' ' + c.last_name + '</div>' +
         '<div style="font-size:12px;color:#4a7aaa;">' + c.address_line_1 + (c.town ? ', ' + c.town : '') + '</div></div>' +
